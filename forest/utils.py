@@ -33,15 +33,6 @@ logger_class = logging.getLoggerClass()
 #         self.log(TRACE, msg, *args, **kwargs)
 
 
-# logging.setLoggerClass(TraceLogger)
-logger = logging.getLogger()
-logger.setLevel("DEBUG")
-fmt = logging.Formatter("{levelname} {module}:{lineno}: {message}", style="{")
-console_handler = logging.StreamHandler()
-console_handler.setLevel((os.getenv("LOGLEVEL") or os.getenv("LOG_LEVEL")).upper() or "INFO")
-console_handler.setFormatter(fmt)
-console_handler.addFilter(FuckAiohttp)
-logger.addHandler(console_handler)
 
 # edge cases:
 # accessing an unset secret loads other variables and potentially overwrites existing ones
@@ -89,12 +80,21 @@ AUXIN = SIGNAL.lower() == "auxin"
 HOSTNAME = open("/etc/hostname").read().strip()  #  FLY_ALLOC_ID
 APP_NAME = os.getenv("FLY_APP_NAME", HOSTNAME)
 URL = os.getenv("URL_OVERRIDE", f"https://{APP_NAME}.fly.dev")
-LOCAL = APP_NAME is None
-ROOT_DIR = (
-    "." if get_secret("NO_DOWNLOAD") else "/tmp/local-signal" if LOCAL else "/app"
+LOCAL = (os.getenv("FLY_APP_NAME") is None)
+ROOT_DIR = get_secret("ROOT_DIR") or (
+    "." if get_secret("NO_DOWNLOAD") else "/signal-data" if LOCAL else "/app"
 )
 UPLOAD = DOWNLOAD = not get_secret("NO_DOWNLOAD")
 MEMFS = not get_secret("NO_MEMFS")
+# logging.setLoggerClass(TraceLogger)
+logger = logging.getLogger()
+logger.setLevel("DEBUG")
+fmt = logging.Formatter("{levelname} {module}:{lineno}: {message}", style="{")
+console_handler = logging.StreamHandler()
+console_handler.setLevel(get_secret("LOGLEVEL") or "INFO")
+console_handler.setFormatter(fmt)
+console_handler.addFilter(FuckAiohttp)
+logger.addHandler(console_handler)
 
 if get_secret("LOGFILES") or not LOCAL:
     # tracelog = logging.FileHandler("trace.log")

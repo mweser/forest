@@ -29,10 +29,7 @@ except ImportError:
         sys.path.append("..")
         import pghelp  # type: ignore # pylint: disable=ungrouped-imports
         import utils  # type: ignore # pylint: disable=ungrouped-imports
-if utils.get_secret("MIGRATE"):
-    get_datastore = "SELECT account, datastore FROM {self.table} WHERE id=$1"
-else:
-    get_datastore = "SELECT datastore FROM {self.table} WHERE id=$1"
+
 
 
 class DatastoreError(Exception):
@@ -51,7 +48,7 @@ AccountPGExpressions = pghelp.PGExpressions(
             active_node_name TEXT, \
             notes TEXT);",
     is_registered="SELECT datastore is not null as registered FROM {self.table} WHERE id=$1",
-    get_datastore=get_datastore,
+    get_datastore="SELECT datastore FROM {self.table} WHERE id=$1",
     get_claim="SELECT active_node_name FROM {self.table} WHERE id=$1",
     mark_account_claimed="UPDATE {self.table} \
         SET active_node_name = $2, \
@@ -95,7 +92,6 @@ class SignalDatastore:
             raise Exception("not a valid number")
         logging.info("SignalDatastore number is %s", self.number)
         self.filepath = "data/" + number
-        # await self.account_interface.create_table()
         setup_tmpdir()  # shouldn't do anything if not running locally
 
     def is_registered_locally(self) -> bool:
@@ -208,6 +204,7 @@ class SignalDatastore:
         # or:
         # open("last_uploaded_checksum", "w").write(zlib.crc32(buffer.seek(0).read()))
         # you could formalize this as "present the previous checksum to upload" as a db procedure
+        await self.account_interface.create_table()
         await self.account_interface.upload(self.number, data)
         logging.debug("saved %s kb of tarballed datastore to supabase", kb)
         return

@@ -11,8 +11,9 @@ RoutingPGExpressions = PGExpressions(
     create_table="CREATE TABLE IF NOT EXISTS {self.table} \
         (id TEXT PRIMARY KEY, \
         destination CHARACTER VARYING(16), \
-        expiration_ms BIGINT\
+        expiration_ms BIGINT,\
         status CHARACTER VARYING(16));",
+        
     # number management
     intend_to_buy="INSERT INTO {self.table} (id, status) VALUES ($1, 'pending');",
     mark_bought="UPDATE {self.table} SET status='available' WHERE id=$1;",

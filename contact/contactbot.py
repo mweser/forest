@@ -321,7 +321,10 @@ class Forest(PayBot):
         recreate the group_routing table, and add a datastore column to signal_accounts
         """
         logging.info("migrating db...")
-        await self.routing_manager.migrate()
+
+        await self.routing_manager.create_table()
+        await self.mobster.ledger_manager.create_table()
+
         rows = await self.routing_manager.execute("SELECT id, destination FROM routing")
         for row in rows if rows else []:
             if not utils.LOCAL:
@@ -329,9 +332,10 @@ class Forest(PayBot):
             if dest := row.get("destination"):
                 new_dest = utils.signal_format(dest)
                 await self.routing_manager.set_destination(row.get("id"), new_dest)
-        await self.datastore.account_interface.migrate()
+        
         await self.group_routing_manager.execute("DROP TABLE IF EXISTS group_routing")
         await self.group_routing_manager.create_table()
+
 
 
 async def inbound_sms_handler(request: web.Request) -> web.Response:
@@ -393,5 +397,5 @@ if __name__ == "__main__":
         our_app["bot"] = Forest()
         our_app["routing"] = RoutingManager()
         our_app["group_routing"] = GroupRoutingManager()
-
-    web.run_app(app, port=8080, host="0.0.0.0", access_log=None)
+    logging.debug("whatever string")
+    web.run_app(app, port=8080, host="0.0.0.0")
