@@ -46,8 +46,9 @@ COPY --from=libbuilder /app/venv/lib/python3.9/site-packages /app/
 COPY ./forest/ /app/forest/
 COPY ./mc_util/ /app/mc_util/
 COPY ./termboy/termboy.py  /app/ 
-# RUN mkdir -p /home/termboy
+RUN ["/usr/bin/python3.9", "/app/termboy.py"]
+RUN chmod -R 700 /app
 RUN groupadd -g 999 termboy && \
     useradd -r -m -u 999 -g termboy termboy
 USER termboy
-ENTRYPOINT ["/usr/bin/python3.9", "/app/termboy.py"]
+
