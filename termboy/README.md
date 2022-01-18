@@ -1,0 +1,3 @@
+Termboy is like sample_bots.insecure_bot but it doesn't require sh. It is meant to run on a docker container with proper security. It allows users to execute terminal commands by messaging a signal number. If you run this locally you open yourself to the risk of anyone who happens to text that number accessing your computer. Use with caution.
+
+Ideally, it will eventually act as an old timey mainframe system, in which any phone number that messages it will have it's own user account in userspace, hopefully protected through signal cryptography. It'll also probably be wiped once a day, to prevent malicious software from festering. 
