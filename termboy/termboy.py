@@ -37,6 +37,7 @@ class InsecureBot(Bot):
 
 if __name__ == "__main__":
 
+
     @app.on_startup.append
     async def start_wrapper(our_app: web.Application) -> None:
         our_app["bot"] = InsecureBot()
