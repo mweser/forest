@@ -19,7 +19,7 @@ class ReplayBot(Bot):
         super().__init__()
 
     async def handle_message(self, message: Message) -> Response:
-        
+
         if cmd := self.match_command(message):
             # invoke the function and return the response
             return await getattr(self, "do_" + cmd)(message)
@@ -51,14 +51,14 @@ class ReplayBot(Bot):
         await pdict.remove(key)
 
     async def do_delete(self, _: Message) -> str:
-        keys = self.messages.dict_.keys()
+        keys = await self.messages.keys()
         tasks = []
         for key in keys:
             task = await self.messages.remove(key)
             tasks.append(task)
         print(tasks)
-        return "deleted log", tasks
+        return "deleted log"
 
 if __name__ == "__main__":
     run_bot(ReplayBot)
-    
+
