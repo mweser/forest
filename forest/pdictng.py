@@ -272,7 +272,7 @@ class aPersistDict:
         This function exists so *OTHER FUNCTIONS* holding the lock can set values."""
         if key is not None and value is not None:
             self.dict_.update({key: value})
-        elif key and value is not None and key in self.dict_:
+        elif key and value is None and key in self.dict_:
             self.dict_.pop(key)
         key = f"Persist_{self.tag}_{NAMESPACE}"
         value = json.dumps(self.dict_)
