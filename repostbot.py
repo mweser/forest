@@ -19,6 +19,13 @@ class ReplayBot(Bot):
         super().__init__()
 
     async def handle_message(self, message: Message) -> Response:
+        
+        if cmd := self.match_command(message):
+            # invoke the function and return the response
+            return await getattr(self, "do_" + cmd)(message)
+        if message.text == "TERMINATE":
+            return "signal session reset"
+
         if len(message.full_text): # full_text can be empty during receipts and typing indicators
             print("fulltext:", message.full_text)
             if message.source.startswith('+'):
@@ -29,7 +36,8 @@ class ReplayBot(Bot):
             message_key = str(source)+str(timestamp)
             self.keyslist.append(message_key)
             self.messages[message_key] = message.full_text
-        return await super().handle_message(message)
+        return await self.default(message)
+        #return await super().handle_message(message)
 
     async def do_hello(self, _: Message) -> str:
         return "Hello, world!"
@@ -38,6 +46,24 @@ class ReplayBot(Bot):
         d = self.messages.dict_
         # return await [(key, val) for val in self.messages.get(keys)]
         return d
+
+    async def delete_from_pdict(self, pdict, key):
+        await pdict.remove(key)
+
+    async def do_delete(self, _: Message) -> str:
+        #loop = asyncio.get_event_loop()
+
+        keys = self.messages.dict_.keys()
+        tasks = []
+        for key in keys:
+            task = asyncio.create_task(self.messages.remove(key))
+            tasks.append(task)
+            #print(tasks)
+        #tasks = await map(self.messages.get, keys)
+        print(tasks)
+        #loop.run_until_complete(tasks)
+        #loop.close()
+        return "deleted log", tasks
 
 if __name__ == "__main__":
     run_bot(ReplayBot)
