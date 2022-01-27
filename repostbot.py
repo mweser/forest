@@ -51,18 +51,12 @@ class ReplayBot(Bot):
         await pdict.remove(key)
 
     async def do_delete(self, _: Message) -> str:
-        #loop = asyncio.get_event_loop()
-
         keys = self.messages.dict_.keys()
         tasks = []
         for key in keys:
-            task = asyncio.create_task(self.messages.remove(key))
+            task = await self.messages.remove(key)
             tasks.append(task)
-            #print(tasks)
-        #tasks = await map(self.messages.get, keys)
         print(tasks)
-        #loop.run_until_complete(tasks)
-        #loop.close()
         return "deleted log", tasks
 
 if __name__ == "__main__":
