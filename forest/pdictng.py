@@ -253,6 +253,22 @@ class aPersistDict:
             value_to_extend.append(value)
             return await self._set(key, value_to_extend)
 
+    async def increment(self, key: str, value: int) -> None:
+        """Since one cannot simply add to a coroutine, this function exists.
+        If the key exists and the value is None, or an empty array, the provided value is added to a(the) list at that value."""
+        value_to_extend = 0
+        async with self.rwlock:
+            value_to_extend = self.dict_.get(key, 0)
+            return await self._set(key, value_to_extend + value)
+
+    async def decrement(self, key: str, value: int) -> None:
+        """Since one cannot simply add to a coroutine, this function exists.
+        If the key exists and the value is None, or an empty array, the provided value is added to a(the) list at that value."""
+        value_to_extend = 0
+        async with self.rwlock:
+            value_to_extend = self.dict_.get(key, 0)
+            return await self._set(key, value_to_extend - value)
+
     async def remove_from(self, key: str, not_value: str) -> None:
         """Removes a value specified from the list, if present."""
         async with self.rwlock:
