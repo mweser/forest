@@ -3,6 +3,7 @@
 # Copyright (c) 2021 The Forest Team
 
 import asyncio
+from xmlrpc.client import Boolean
 
 import mc_util
 from prometheus_async import aio
@@ -15,11 +16,18 @@ from ulid2 import get_ulid_time, get_ulid_timestamp
 import datetime
 from typing import Any, AsyncIterator, Callable, Optional, Type, Union
 
+import random
 
 class ReplayBot(Bot):
     def __init__(self):
         self.messages: dict[str, list[str]] = aPersistDict("messages")
         self.keyslist = []
+        self.bj_p1_count = 0
+        self.bj_p2_count = 0
+        self.pval = 0
+        self.dval = 0
+        self.psuit = ""
+        self.dsuit = ""
         super().__init__()
 
     async def handle_message(self, message: Message) -> Response:
@@ -42,17 +50,17 @@ class ReplayBot(Bot):
             self.keyslist.append(message_key)
             self.messages[message_key] = message.full_text
             
-
-    async def ulid_to_human(self, ulid):
+    def ulid_to_human(self, ulid: str) -> str:
         return get_ulid_time(ulid).strftime("%d-%b-%Y (%H:%M:%S.%f)")
 
     async def do_replay(self, _: Message) -> str:
-        d = self.messages.dict_
-        # return await [(key, val) for val in self.messages.get(keys)]
         output_text = ""
-        for val in list(d.keys()):
-            output_text += f"key: {val},\n    time: {await self.ulid_to_human(val)},\n    val: {d[val]}\n"
-        return output_text # [d[item] for item in list(d.keys())[0:3]]
+        for val in await self.messages.keys():
+            output_text += f"key: {val},\n    time: {self.ulid_to_human(val)},\n    val: {await self.messages.get(val)}\n"
+        return output_text
+
+    async def do_listing(self, _: Message) -> str:
+        pass
 
     async def delete_from_pdict(self, pdict, key):
         await pdict.remove(key)
@@ -66,6 +74,57 @@ class ReplayBot(Bot):
         print(tasks)
         return "deleted log"
 
+    def deal_card(self):
+        val = random.choice([1,2,3,4,5,6,7,8,9,10,11])
+        suit = random.choice(["Spades", "Hearts", "Clubs", "Diamonds"])
+        return val, suit
+
+    def busted(self, counter):
+        if counter > 21:
+            return True
+        else:
+            return False
+    
+    async def do_hit(self, _: Message):
+        return await self.blackjack_handler(hit=1)
+    async def do_stand(self, _: Message):
+        return await self.blackjack_handler(hit=0)
+
+    async def blackjack_handler(self, hit: Boolean):
+        if self.pval == 0:
+            self.pval, self.psuit = self.deal_card()
+        if self.dval == 0:
+            self.dval, self.dsuit = self.deal_card()
+        if hit:
+            self.pval, self.psuit = self.deal_card()
+            self.bj_p1_count += self.pval
+        self.dval, self.dsuit = self.deal_card()
+        self.bj_p2_count += self.dval
+        print(self.bj_p1_count, self.bj_p2_count)
+        #return pval, psuit, dval, dsuit, self.busted(self.bj_p1_count), self.busted(self.bj_p2_count)
+        tmp1 = self.bj_p1_count
+        tmp2 = self.bj_p2_count
+        if self.busted(self.bj_p1_count):
+            if self.busted(self.bj_p2_count):
+                self.bjclear()
+                return "Both busted."
+            self.bjclear()
+            return f"You busted with a total of {tmp1}."
+        if self.busted(self.bj_p2_count):
+            self.bjclear()
+            return f"Dealer busted with a total of {tmp2}, you win."
+        return f"Player has {self.pval} of {self.psuit}. Dealer has {self.dval} of {self.dsuit}. Player count is {self.bj_p1_count}. Dealer count is {self.bj_p2_count}."
+
+    async def do_bjclear(self, _: Message):
+        return self.bjclear()
+    def bjclear(self):
+        self.bj_p1_count = 0
+        self.bj_p2_count = 0
+        self.pval = 0
+        self.dval = 0
+        self.psuit = ""
+        self.dsuit = ""
+        return "Cleared the game."
 if __name__ == "__main__":
     run_bot(ReplayBot)
     
