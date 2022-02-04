@@ -74,23 +74,22 @@ class ReplayBot(Bot):
         print(tasks)
         return "deleted log"
 
-    def deal_card(self):
+    def deal_card(self) -> tuple[int, str]:
         val = random.choice([1,2,3,4,5,6,7,8,9,10,11])
         suit = random.choice(["Spades", "Hearts", "Clubs", "Diamonds"])
         return val, suit
 
-    def busted(self, counter):
+    def busted(self, counter) -> bool:
         if counter > 21:
             return True
-        else:
-            return False
+        return False
     
-    async def do_hit(self, _: Message):
-        return await self.blackjack_handler(hit=1)
-    async def do_stand(self, _: Message):
-        return await self.blackjack_handler(hit=0)
+    async def do_hit(self, _: Message) -> str:
+        return await self.blackjack_handler(hit=True)
+    async def do_stand(self, _: Message) -> str:
+        return await self.blackjack_handler(hit=False)
 
-    async def blackjack_handler(self, hit: Boolean):
+    async def blackjack_handler(self, hit: bool) -> str:
         if self.pval == 0:
             self.pval, self.psuit = self.deal_card()
         if self.dval == 0:
@@ -101,7 +100,6 @@ class ReplayBot(Bot):
         self.dval, self.dsuit = self.deal_card()
         self.bj_p2_count += self.dval
         print(self.bj_p1_count, self.bj_p2_count)
-        #return pval, psuit, dval, dsuit, self.busted(self.bj_p1_count), self.busted(self.bj_p2_count)
         tmp1 = self.bj_p1_count
         tmp2 = self.bj_p2_count
         if self.busted(self.bj_p1_count):
@@ -117,14 +115,14 @@ class ReplayBot(Bot):
 
     async def do_bjclear(self, _: Message):
         return self.bjclear()
-    def bjclear(self):
+    def bjclear(self) -> str:
         self.bj_p1_count = 0
         self.bj_p2_count = 0
         self.pval = 0
         self.dval = 0
         self.psuit = ""
         self.dsuit = ""
-        return "Cleared the game."
+        return "Cleared the game!"
 if __name__ == "__main__":
     run_bot(ReplayBot)
     
