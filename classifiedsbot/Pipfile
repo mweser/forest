@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+aioprocessing = "*"
+asyncpg = "*"
+base58 = "*"
+phonenumbers = "*"
+termcolor = "*"
+prometheus_async = "*"
+prometheus_client = "*"
+ulid2 = "*"
+protobuf = "*"
+pycryptodome = "*"
+
+[requires]
+python_version = "3.9"
+
+[pipenv]
+allow_prereleases = true
+
+[dev-packages]
+
+[packages.aiohttp]
+extras = [ "speedups",]
+version = "==3.8.1"
