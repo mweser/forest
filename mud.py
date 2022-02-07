@@ -7,14 +7,19 @@ import os
 from os import system
 from telnetlib import Telnet
 
-HOST = '66.42.116.114'
-tn = Telnet(HOST)
+HOST = "66.42.116.114"
+
 
 class MudBot(Bot):
-    async def do_something(self, msg: Message) -> Response:
-        Telnet.open('66.42.116.114', '4000')
+    def __init__(self):
+        self.tn = Telnet.open(HOST, 4000)
+
+    async def do_mud(self, msg: Message) -> Response:
+        msg_text = msg.full_text
+        tn.write(msg_text.encode("ascii"))
         response = tn.read_all()
-        return response
+        return response.decode()
+
 
 if __name__ == "__main__":
     run_bot(MudBot)
