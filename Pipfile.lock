@@ -1,0 +1,27 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "5f55e4978b295533beb3a989f608c812c402649c224a5110358c3a4473cce74f"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.9"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "aiohttp": {
+            "extras": [
+                "speedups"
+            ],
+            "version": "*"
+        }
+    },
+    "develop": {}
+}
