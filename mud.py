@@ -13,9 +13,9 @@ class MudBot(Bot):
     async def do_mud(self, msg: Message) -> Response:
         msg_text = msg.full_text
         ws = create_connection("ws://66.42.116.114:4002")
-        response = ws.recv()
+        raw = ws.recv()
         ws.close()
-        return response
+        return raw
 
 
 if __name__ == "__main__":
