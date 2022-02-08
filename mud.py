@@ -7,15 +7,16 @@ import os
 from os import system
 from websocket import create_connection
 import time
-import rel
+from bs4 import BeautifulSoup
 
 class MudBot(Bot):
     async def do_mud(self, msg: Message) -> Response:
         msg_text = msg.full_text
         ws = create_connection("ws://66.42.116.114:4002")
         raw = ws.recv()
+        resp = BeautifulSoup(raw)
         ws.close()
-        return raw
+        return resp.get_text()
 
 
 if __name__ == "__main__":
