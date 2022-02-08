@@ -1,0 +1,7 @@
+data/
+dev_secrets
+signal-cli
+__pycache__/
+forest/__pycache__/
+avatars/
+intent_cache/
