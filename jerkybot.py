@@ -1,9 +1,6 @@
-
-
 from forest import utils
 from forest.pdictng import aPersistDict
 from forest.core import Message, Response, hide, QuestionBot, run_bot, get_uid
-import openai
 import os
 from aiohttp import web
 
@@ -30,13 +27,14 @@ class JerkyBot(QuestionBot):
             jerky_type = (await self.ask_freeform_question(msg.uuid, "What type would you like? (name from the above menu)")).lower()
             if jerky_type not in valid_types:
                 await self.send_message(msg.uuid, "Sorry, please choose an option from the menu!")
-        while size.replace("oz", "", 1) not in "2 8 12":
-            size = await self.ask_freeform_question(msg.uuid, "What size would you like? (2oz, 8oz, 12oz)")
+        while size.replace("oz", "", 1) not in "2 6 12":
+            size = await self.ask_freeform_question(msg.uuid, "What size would you like? (2oz, 6oz, 12oz)")
             size = size.replace("oz", "", 1)
         while not quantity.isnumeric():
             quantity = await self.ask_freeform_question(msg.uuid, "How many would you like to order? (As a number)")
         await self.pending_orders.set(msg.uuid, order_id)
         parameters = [quantity, size, jerky_type]
+        price = {2:11, 6:30,
         await self.order_details.set(order_id, parameters)
         await self.order_state.set(order_id, "PENDING")
         await self.send_message(utils.get_secret("ADMIN"), f"Order {order_id} created!")
