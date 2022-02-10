@@ -15,6 +15,7 @@ termcolor = "*"
 ulid2 = "*"
 pycryptodome = "*"
 padatious = "*"
+nltk = "*"
 
 [requires]
 python_version = "3.9"
