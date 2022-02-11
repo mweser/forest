@@ -116,12 +116,6 @@ class RepostBot(QuestionBot):
 
 
     async def do_post(self, message: Message) -> Response:
-        #if cmd := self.match_command(message):
-        #    # invoke the function and return the response
-        #    return await getattr(self, "do_" + cmd)(message)
-        #if message.text == "TERMINATE":
-        #    return "signal session reset"
-
         if len(message.full_text): # full_text can be empty during receipts and typing indicators
             if message.source.startswith('+'):
                 source = message.source[1:]
