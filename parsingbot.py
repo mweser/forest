@@ -16,18 +16,14 @@ class ParsingBot(Bot):
         ]
         print(self.commands)        
         self.container = IntentContainer('intent_cache')
+        no_syns = []
         for command in self.commands:
             syns = get_synonyms(command)
             if len(syns) > 0:
                 self.container.add_intent(command, syns, reload_cache=True)
-                
-        # for file_name in glob('nlu/*.intent'):
-        #     name = basename(file_name).replace('.intent', '')
-        #     self.container.load_file(name, file_name)#, reload_cache=reload_cache)
-
-        # for file_name in glob('nlu/*.entity'):
-        #     name = basename(file_name).replace('.entity', '')
-        #     self.container.load_entity(name, file_name)#, reload_cache=reload_cache)
+            else:
+                no_syns.append(command)
+        self.container.add_intent('fallback', no_syns, reload_cache=True)
 
         super().__init__(bot_number)
 
@@ -37,6 +33,13 @@ class ParsingBot(Bot):
             print(intent)
             if intent.conf > 0.2:
                 return(intent.name)
+        return super().match_command(msg)
+
+    async def do_fallback(self, msg: Message) -> str:
+        """
+        Simple, Hello, world program. Type /hello and the bot will say "Hello, world!"
+
+        """
         return super().match_command(msg)
 
     async def do_hello(self, _: Message) -> str:
@@ -70,13 +73,13 @@ class ParsingBot(Bot):
         """
         Repeats what you said. Type /echo foo and the bot will say "foo".
         """
-        return('imagining' + message.text)
+        return('imagining ' + message.text)
 
     async def do_paint(self, message: Message) -> str:
         """
         Repeats what you said. Type /echo foo and the bot will say "foo".
         """
-        return("painting" + message.text)
+        return("painting " + message.text)
 
 if __name__ == "__main__":
     run_bot(ParsingBot)
