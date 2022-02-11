@@ -31,7 +31,7 @@ class ParsingBot(Bot):
         if msg.full_text:
             intent = self.container.calc_intent(msg.full_text)
             print(intent)
-            if intent.conf > 0.2:
+            if intent.conf > 0.5:
                 return(intent.name)
         return super().match_command(msg)
 

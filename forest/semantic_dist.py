@@ -14,10 +14,10 @@ def get_synonyms(command: str) -> list:
         relatives = sum([variants, children, parents], [])
         lemmas = sum([o.lemmas() for o in relatives], [])
         names = [clean(l.name()) for l in lemmas]
-        examples = sum([o.examples() for o in relatives], [])
-        definitions = [o.definition() for o in relatives]
-        prompts = sum([names, examples, definitions], [])
-        return(prompts)
+        # examples = sum([o.examples() for o in relatives], [])
+        # definitions = [o.definition() for o in relatives]
+        # prompts = sum([names, examples, definitions], [])
+        return(names)
     except:
         return([])
 
