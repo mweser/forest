@@ -25,8 +25,6 @@ from ulid2 import get_ulid_time, get_ulid_timestamp
 
 #pwd = os.getcwd()
 
-
-
 class RepostBot(QuestionBot):
     user_images: Dict[str, str] = {}
 
@@ -126,6 +124,15 @@ class RepostBot(QuestionBot):
             self.humantime = get_ulid_time(message_key).strftime("%d-%b-%Y (%H:%M:%S.%f)")
             self.keyslist.append(message_key)
             await self.messages.set(message_key, message.full_text)
+
+    async def do_listing(self, message: Message) -> str:
+        acc = []
+        for val in await self.messages.keys():
+            text = await self.messages.get(val)
+            if message.text in text:
+                acc.append(text)
+        return acc
+
 
     async def delete_from_pdict(self, pdict, key):
         await pdict.remove(key)
