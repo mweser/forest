@@ -24,11 +24,6 @@ allow_prereleases = true
 [dev-packages]
 mypy = "*"
 pylint = "*"
-types-termcolor = "*"
-types-protobuf = "*"
-isort = "*"
-aiomonitor = "*"
-typing = "*"
 
 [packages.aiohttp]
 extras = [ "speedups",]
