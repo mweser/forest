@@ -1,7 +1,6 @@
 #!/usr/bin/python3.9
 # Copyright (c) 2021 MobileCoin Inc.
 # Copyright (c) 2021 The Forest Team
-
 import asyncio
 import json
 import string
@@ -20,8 +19,8 @@ from forest.core import (
     Response,
     app,
     hide,
-    requires_admin,
     is_admin,
+    requires_admin,
 )
 from forest.pdictng import aPersistDict, aPersistDictOfInts, aPersistDictOfLists
 from mc_util import pmob2mob
@@ -282,6 +281,86 @@ class ClanGat(TalkBack):
             return "Sorry, {list_} has 0mmob balance!"  # thanks y?!
         return "Sorry, can't help you."
 
+    async def pay_logging_success(
+        self,
+        target: str,
+        amount_mmob: int,
+        message: Optional[str],
+        input_txo_ids: list[str],
+        save_key: str,
+        list_: str,
+    ) -> Optional[Message]:
+        try:
+            result = await self.send_payment(
+                recipient=target,
+                amount_pmob=amount_mmob * 1_000_000_000,
+                receipt_message=message or "",
+                input_txo_ids=input_txo_ids,
+            )
+            await asyncio.sleep(0.5)
+            # if we didn't get a result indicating success
+            if not result or (result and result.status == "tx_status_failed"):
+                # stash as failed
+                return None
+            # persist user as successfully paid
+            await self.successful_pays.extend(save_key, target)
+            await self.payout_balance_mmob.decrement(list_, amount_mmob)
+            await self.send_message(target, "I've sent you a payment!")
+            return result
+        except Exception:  # pylint: disable=broad-except
+            return None
+
+    async def pay(
+        self,
+        payer: str,
+        amount_mmob: int,
+        filtered_send_list: list[str],
+        message: Optional[str],
+        save_key: str,
+        list_: str,
+    ) -> str:
+        async with self.pay_lock:
+            valid_utxos = [
+                utxo
+                for utxo, upmob in (await self.mobster.get_utxos()).items()
+                if upmob > (1_000_000_000 * amount_mmob)
+            ]
+            if len(valid_utxos) < len(filtered_send_list):
+                await self.send_message(
+                    payer,
+                    "Please wait! Insufficient number of utxos!\nBuilding more...",
+                )
+                building_msg = await self.mobster.split_txos_slow(
+                    amount_mmob, (len(filtered_send_list) - len(valid_utxos))
+                )
+                await self.send_message(payer, building_msg)
+                valid_utxos = [
+                    utxo
+                    for utxo, upmob in (await self.mobster.get_utxos()).items()
+                    if upmob > (1_000_000_000 * amount_mmob)
+                ]
+            results = [
+                await self.pay_logging_success(
+                    target,
+                    amount_mmob,
+                    message,
+                    input_txo_ids=[valid_utxos.pop(0) or ""],
+                    save_key=save_key,
+                    list_=list_,
+                )
+                for target in filtered_send_list
+            ]
+            failed = [filtered_send_list[i] for (i, x) in enumerate(results) if not x]
+            if len(failed):
+                await self.send_message(
+                    payer,
+                    (
+                        f"failed on\n{[await self.get_displayname(uuid) for uuid in failed]}\n"
+                        "Copy and paste your original pay message and resend to retry."
+                    ),
+                )
+            return "completed sends"
+
     @hide
     async def do_pay(self, msg: Message) -> Response:
         """Allows an event/list owner to distribute available funds across those on a list."""
@@ -350,76 +429,9 @@ class ClanGat(TalkBack):
         )
         if not await self.ask_yesno_question(msg.uuid):
             return "OK, canceling"
-        async with self.pay_lock:
-            valid_utxos = [
-                utxo
-                for utxo, upmob in (await self.mobster.get_utxos()).items()
-                if upmob > (1_000_000_000 * amount_mmob)
-            ]
-            if len(valid_utxos) < len(filtered_send_list):
-                await self.send_message(
-                    msg.uuid,
-                    "Please wait! Insufficient number of utxos!\nBuilding more...",
-                )
-                building_msg = await self.mobster.split_txos_slow(
-                    amount_mmob, (len(filtered_send_list) - len(valid_utxos))
-                )
-                await self.send_message(msg.uuid, building_msg)
-                valid_utxos = [
-                    utxo
-                    for utxo, upmob in (await self.mobster.get_utxos()).items()
-                    if upmob > (1_000_000_000 * amount_mmob)
-                ]
-            failed = []
-
-            async def pay_logging_success(
-                target: str,
-                amount_mmob: int,
-                message: Optional[str] = "",
-                input_txo_ids: Optional[list[str]] = None,
-            ) -> Optional[Message]:
-                if not input_txo_ids:
-                    input_txo_ids = []
-                try:
-                    result = await self.send_payment(
-                        recipient=target,
-                        amount_pmob=amount_mmob * 1_000_000_000,
-                        receipt_message=message or "",
-                        input_txo_ids=input_txo_ids,
-                    )
-                    await asyncio.sleep(0.5)
-                    # if we didn't get a result indicating success
-                    if not result or (result and result.status == "tx_status_failed"):
-                        # stash as failed
-                        return None
-                    # persist user as successfully paid
-                    await self.successful_pays.extend(save_key, target)
-                    await self.payout_balance_mmob.decrement(list_, amount_mmob)
-                    await self.send_message(target, "I've sent you a payment!")
-                    return result
-                except Exception:  # pylint: disable=broad-except
-                    return None
-
-            results = [
-                await pay_logging_success(
-                    target,
-                    amount_mmob,
-                    message,
-                    input_txo_ids=[valid_utxos.pop(0) or ""],
-                )
-                for target in filtered_send_list
-            ]
-            failed = [filtered_send_list[i] for (i, x) in enumerate(results) if not x]
-            if len(failed):
-                await self.send_message(
-                    msg.uuid,
-                    (
-                        f"failed on\n{[await self.get_displayname(uuid) for uuid in failed]}\n"
-                        "Copy and paste your original pay message and resend to retry."
-                    ),
-                )
-            return "completed sends"
-        return "failed"
+        return await self.pay(
+            msg.uuid, amount_mmob, filtered_send_list, message, save_key, list_
+        )
 
     @hide
     async def do_fund(self, msg: Message) -> Response:
