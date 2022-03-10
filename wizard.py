@@ -11,6 +11,7 @@ from random import choice
 from statistics import mode
 from threading import Event
 from time import sleep
+from tkinter import W
 from typing import Iterable, cast
 from urllib.request import urlopen
 
@@ -158,7 +159,7 @@ def change_secrets(new_values: dict[str, str], **kwargs: str) -> None:
     secrets = parse_secrets(open(f"{env}_secrets").read())
     # py3.9 introduced dict unions
     changed = secrets | new_values | kwargs
-    open(f"{env}_secrets", "w").write("\n".join(f"{k}={v}" for k, v in changed))
+    open(f"{env}_secrets", "w").write("\n".join(f"{k}={v}" for k, v in changed.items()))
 
 
 def do_number():
