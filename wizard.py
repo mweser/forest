@@ -30,8 +30,9 @@ from rich.progress import (
     TimeRemainingColumn,
     TransferSpeedColumn,
 )
-from rich.prompt import Prompt
+from rich.prompt import Prompt, Confirm
 from rich.text import Text
+
 
 progress = Progress(
     TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
@@ -96,7 +97,7 @@ def settings():
 
 
 def do_docs():
-    md = Markdown(readme)
+    md = Markdown(rdme)
     console.print(md)
     hint = Text()
     hint.append(
@@ -176,7 +177,8 @@ def fetch_auxin():
 
 
 def switch_auxin():
-    return "switching auxin stuff here"
+    if Confirm.ask("Would you like to switch to Auxin?"):
+        change_secrets({"SIGNAL": Prompt})
 
 
 def do_update():
@@ -186,18 +188,20 @@ def do_update():
 
 
 def do_signalcli():
-    task1 = progress.add_task("Downloading...")
-    v = "0.10.3"
-    copy_url(
-        task1,
-        url=f"https://github.com/AsamK/signal-cli/releases/download/v{v}/signal-cli-{v}-Linux.tar.gz",
-        path="./signal-cli.tar.gz",
-    )
-    with console.status("[bold green]unzipping..") as status:
-        task2 = progress.add_task(
-            "unzip",
-        )
-        do_unzip_signal(archive="signal-cli.tar.gz")
+    if Confirm.ask("Would you like to switch to Signal-CLI?"):
+        change_secrets({"SIGNAL":"signal-cli"})
+    #task1 = progress.add_task("Downloading...")
+    #v = "0.10.3"
+    #copy_url(
+    #    task1,
+    #    url=f"https://github.com/AsamK/signal-cli/releases/download/v{v}/signal-cli-{v}-Linux.tar.gz",
+    #    path="./signal-cli.tar.gz",
+    #)
+    #with console.status("[bold green]unzipping..") as status:
+    #    task2 = progress.add_task(
+    #        "unzip",
+    #    )
+    #    do_unzip_signal(archive="signal-cli.tar.gz")
 
 
 # change this to something generic
