@@ -1322,16 +1322,44 @@ class QuestionBot(PayBot):
         # will be filled out differently depending on whether user provided labels or not
         options_text=""
 
+        # This is the character that will go between labels and options
+        spacer: str = "" 
+
         # User can provide labels for the options by passing a dict
         if isinstance(options, dict):
             # Organise options into friendly text to send user.
+            labels_lower: dict[str,str] = {}
+
             for label, body in options.items():
-                options_text = options_text + f"{label}) {body} \n"
+                
+                # If there are no values in the dict we won't use a spacer, but otherwise we will use ") "
+                if not body == "":
+                    spacer = ") "
+                
+
+                # This will allow people to type their answers case insensitively,
+                #  but receive their answer as it was in the dict
+                
+                new_label = label.lower()
+                if new_label in labels_lower.values():
+                    logging.error("Duplicate keys in dictionary, dictionary is case insensitive")
+                    return None
+
+                # This dict will preserve the keys as originally written
+                labels_lower[new_label] = label
+                options_text = options_text + f"{label}{spacer}{body} \n"
+            
+            if len(labels_lower) < len(options.keys()):
+                logging.error("Duplicate keys in dictionary, dictionary is case insensitive")
+                return None
+                
+                
 
         # User can pass just a list of options and we generate labels for them
         if isinstance(options, list):
-
+            spacer = ") "
             dict_options: dict[str, str] = {}
+            labels_lower: dict[str,str] = {}
             index: int = 1
 
             # generate labels that are just ints and organise the options
@@ -1339,7 +1367,8 @@ class QuestionBot(PayBot):
             for item in options:
                 label= str(index)
                 dict_options[label] = item
-                options_text = options_text + f"{label}) {item} \n"
+                labels_lower[label] = label 
+                options_text = options_text + f"{label}{spacer}{item} \n"
                 index += 1
 
 
@@ -1351,37 +1380,54 @@ class QuestionBot(PayBot):
         answer_future = self.pending_answers[recipient] = asyncio.Future()
         answer = await answer_future
         self.pending_answers.pop(recipient)
+        if isinstance(answer.full_text,str):
+            answer_lower = answer.full_text.lower()
+        
+        # if the answer given does not match a label or an item
 
-        # if the answer given does not match a label
-        if answer.full_text and not answer.full_text in options.keys():
+        if answer.full_text and not answer_lower in labels_lower and not answer_lower in options.values():
             if answer.full_text.lower() in self.TERMINAL_ANSWERS:
                 return None
             return await self.ask_multiple_choice_question(
                 recipient,
-                "Please reply with just the label exactly as typed \n \n"
+                "Please reply with just the label exactly as typed:\n \n"
                 + question_text,
                 options,
                 requires_confirmation,
                 requires_first_device,
             )
 
-        # import pdb;pdb.set_trace()
-        if isinstance(answer.full_text, str) and answer.full_text in options.keys():
-            
+        
+        if isinstance(answer_lower, str) and ((answer_lower in labels_lower) or (answer.full_text in options.values)):
+
+            if answer.full_text in options.values():
+                for label, item in options.items():
+                    if item == answer.full_text:
+                        answer.full_text = label
+
+            confirmation = True
             if requires_confirmation:
                 confirmation_text = (
                     "You picked: \n"
                     + answer.full_text
-                    + ") "
+                    + spacer
                     + options[answer.full_text]
-                    + "\n \n Is this correct? (y/n)"
+                    + "\n \n Is this correct? (yes/no)"
                 )
-                confirmation = self.ask_yesno_question(recipient, confirmation_text)
+                confirmation = await self.ask_yesno_question(recipient, confirmation_text)
 
-                if confirmation:
-                    return answer.full_text, options[answer.full_text]
+            if not confirmation:
+                return await self.ask_multiple_choice_question(
+                recipient,
+                question_text,
+                options,
+                requires_confirmation,
+                requires_first_device,
+            )
+                    
+                
+            return options[answer.full_text] or answer.full_text
 
-            return options[answer.full_text]
         
         return None
 
