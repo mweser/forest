@@ -86,8 +86,7 @@ def main():
     menu = inquirer.select(
         message="Welcome to the forest setup wizard.",
         choices=[
-            Choice(value=settings, name="Get Started / Change Settings"),
-            Choice(value=do_newbot, name="Start a new bot from a template"),
+            Choice(value=settings, name="Get Started / Change Settings"), 
             Choice(value=do_docs, name="Read documentation"),
             Choice(value=do_update, name="Update"),
             Choice(value=do_deps, name="Install Dependencies"),
@@ -102,11 +101,11 @@ def settings():
     pref = inquirer.select(
         message="What would you like to do?",
         choices=[
+            Choice(value=do_newbot, name="Start a new bot from a template"),
             Choice(value=do_number, name="Set bot number"),
-            Choice(value=set_admin, name="Set admin number."),
+            Choice(value=set_admin, name="Set admin number"),
             Choice(value=do_auxin, name="Switch to auxin"),
-            Choice(value=do_rust, name="Set up Rust for Auxin", enabled=True),
-            Choice(value=do_signalcli, name="Switch back to Signal-Cli."),
+            Choice(value=do_signalcli, name="Switch to Signal-Cli"),
         ],
         default=None,
     ).execute()
