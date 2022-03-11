@@ -79,7 +79,7 @@ console = Console()
 tasks = [f"task {n}" for n in range(1, 11)]
 
 # print art
-console.print(tree, style=style)
+#console.print(tree, style=style)
 
 # maybe i could reference something more portable to make changing menus around easier
 def main():
@@ -99,8 +99,6 @@ def main():
 
 
 def settings():
-    secrets = open("dev_secrets", "w+")  # this probably shouldn't be here
-    current_secrets = secrets.read()
     pref = inquirer.select(
         message="What would you like to do?",
         choices=[
@@ -159,7 +157,7 @@ def change_secrets(new_values: dict[str, str], **kwargs: str) -> None:
     secrets = parse_secrets(open(f"{env}_secrets").read())
     # py3.9 introduced dict unions
     changed = secrets | new_values | kwargs
-    open(f"{env}_secrets", "w").write("\n".join(f"{k}={v}" for k, v in changed.items()))
+    open(f"{env}_secrets", "w+").write("\n".join(f"{k}={v}" for k, v in changed.items()))
 
 
 def do_number():
