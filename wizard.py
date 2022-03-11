@@ -128,8 +128,8 @@ def do_auxin():
         message="Do you have auxin already?",
         choices=[
             Choice(
-                value=build_auxin,
-                name="No, build Auxin for me using cargo",
+                value=fetch_auxin,
+                name="Download and set up Auxin",
                 enabled=True,
             ),
             Choice(
@@ -186,9 +186,11 @@ def get_rust():
     )
 
 
-def build_auxin():
-    os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
-    os.system("rustup default nightly")
+def fetch_auxin():
+    urlopen("something here")
+    
+    #os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
+    #os.system("rustup default nightly")
 
 
 def switch_auxin():
