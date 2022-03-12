@@ -72,8 +72,7 @@ def main():
         choices=[
             Choice(value=settings, name="Get Started / Change Settings"), 
             Choice(value=do_docs, name="Read documentation"),
-            Choice(value=do_update, name="Update"),
-            Choice(value=do_deps, name="Install Dependencies"),
+            Choice(value=do_update, name="Update from Git"), 
             Choice(value=do_exit, name="Exit"),
         ],
         default=None,
@@ -88,8 +87,9 @@ def settings():
             Choice(value=do_newbot, name="Start a new bot from a template"),
             Choice(value=do_number, name="Set bot number"),
             Choice(value=set_admin, name="Set admin number"),
-            Choice(value=do_auxin, name="Switch to auxin"),
+            Choice(value=do_auxin, name="Switch to Auxin"),
             Choice(value=do_signalcli, name="Switch to Signal-Cli"),
+            Choice(value=do_deps, name="Install / Check Dependencies"),
         ],
         default=None,
     ).execute()
@@ -170,15 +170,14 @@ def get_rust():
 
 
 def fetch_auxin():
-    urlopen("something here")
-    
+    urlopen("something here") 
     #os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
     #os.system("rustup default nightly")
 
 
 def switch_auxin():
     if Confirm.ask("Would you like to switch to Auxin?"):
-        change_secrets({"SIGNAL": Prompt})
+        change_secrets({"SIGNAL":"auxin"})
 
 
 def do_update():
