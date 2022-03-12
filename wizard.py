@@ -170,7 +170,21 @@ def get_rust():
 
 
 def fetch_auxin():
-    urlopen("something here") 
+    # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
+    task1 = progress.add_task("Downloading...")
+    v = "0.10.3"
+    copy_url(
+        task1,
+        url=f"https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip",
+        path="./auxin.zip",
+    )
+    with console.status("[bold green]unzipping..") as status:
+        task2 = progress.add_task(
+            "unzip",
+        )
+        do_unzip(archive="auxin.zip")
+
+
     #os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
     #os.system("rustup default nightly")
 
@@ -204,8 +218,8 @@ def do_signalcli():
 
 
 # change this to something generic
-def do_unzip_signal(archive):
-    archive = "signal-cli.tar.gz"
+def do_unzip(archive):
+    #archive = "signal-cli.tar.gz"
     os.system("tar -xvf {}".format(archive))
 
 
