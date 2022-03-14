@@ -14,12 +14,12 @@ class Redeem:
 
     async def init(self, codes: list[str]) -> None:
         for code in codes:
-            await self.conn.set(code, "unredeemed")
+            await self.conn.hset("active_codes", code, "AVAIL")
 
     async def check(self, user: str, code: str) -> bool:
-        if await self.conn.incr(user) > 3:
+        if await self.conn.hincrby("user_guesses", user, 1) > 3:
             return False
-        if await self.conn.get(code.upper()):
-            await self.conn.set(code.upper(), "redeemed")
+        if await self.conn.hget("active_codes", code.upper()):
+            await self.conn.hset("active_codes", code.upper(), "USED")
             return True
         return False
