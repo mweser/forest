@@ -121,6 +121,20 @@ class TalkBack(QuestionBot):
         return None
 
 
+class Dialog(aPersistDict[str]):
+    keys: set[str]
+
+    def dump() -> str:
+        return "\n\n".join([f"{k}: {v}\n------\n" for (k, v) in self.dict_.items()])
+
+    async def get(self, key: str) -> str:
+        self.keys.add(key)
+        return await super().get(key, key)
+
+    def list_keys(self) -> set[str]:
+        return self.keys
+
+
 class Teddy(TalkBack):
     def __init__(self) -> None:
         self.no_repay: list[str] = []
