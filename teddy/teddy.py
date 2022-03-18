@@ -128,6 +128,7 @@ class Dialog(aPersistDict[str]):
         return "\n\n".join([f"{k}: {v}\n------\n" for (k, v) in self.dict_.items()])
 
     async def get(self, key: str) -> str:
+        # unfortunately... we'd really like to do this before we start, not after the code paths run
         self.keys.add(key)
         return await super().get(key, key)
 
