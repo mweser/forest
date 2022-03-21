@@ -157,20 +157,33 @@ async def test_questions(bot) -> None:
     """Tests the various questions from questionbot class"""
 
     # Enable Magic allows for mistyped commands
-    os.environ["ENABLE_MAGIC"] = "1"
+    os.environ["ENABLE_MAGIC"] = ""
     # the issue here is that we need to send "yes" *after* the question has been asked
     # so we make it as create_task, then send the input, then await the task to get the result
 
     # import pdb;pdb.set_trace()
-
+    logging.info(bot.pending_confirmations)
     t = asyncio.create_task(bot.ask_yesno_question(USER_NUMBER, "Do you like faeries?"))
+    logging.info(bot.pending_confirmations)
+    await asyncio.sleep(0)
+    logging.info(bot.pending_confirmations)
     await bot.send_input("yes")
+    logging.info(bot.pending_confirmations)
     assert await t
-
+    logging.info(bot.pending_confirmations)
     answer = asyncio.create_task(
         bot.ask_freeform_question(USER_NUMBER, "What's your favourite tree?")
     )
-    logging.info(bot.pending_answers)
+    logging.info("after ask, before sleep: %s", bot.pending_answers)
+    await asyncio.sleep(0)
+    logging.info("after sleep: %s", bot.pending_answers)
     await bot.send_input("Birch")
-    logging.info(bot.pending_answers)
-    assert await asyncio.wait_for(answer, timeout=1) == "Birch"
+    logging.info("after input: %s", bot.pending_answers)
+    res = await asyncio.wait_for(answer, timeout=1) == "Birch"
+    logging.info("after await: %s", bot.pending_answers)
+    assert res
+
+
+# async def main():
+#     await test_questions(MockBot(BOT_NUMBER))
+# asyncio.run(main())
