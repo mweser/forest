@@ -53,7 +53,7 @@ class MockMessage(Message):
         self.text = text
         self.source = USER_NUMBER
         self.uuid = "cf3d7d34-2dcd-4fcd-b193-cbc6a666758b"
-        self.mentions : list[str] = []
+        self.mentions: list[str] = []
         super().__init__({})
 
 
@@ -160,13 +160,17 @@ async def test_questions(bot) -> None:
     os.environ["ENABLE_MAGIC"] = "1"
     # the issue here is that we need to send "yes" *after* the question has been asked
     # so we make it as create_task, then send the input, then await the task to get the result
-    
+
     # import pdb;pdb.set_trace()
 
     t = asyncio.create_task(bot.ask_yesno_question(USER_NUMBER, "Do you like faeries?"))
     await bot.send_input("yes")
-    assert await t is True
+    assert await t
 
-    answer = asyncio.create_task(bot.ask_freeform_question(USER_NUMBER, "What's your favourite tree?"))
+    answer = asyncio.create_task(
+        bot.ask_freeform_question(USER_NUMBER, "What's your favourite tree?")
+    )
+    logging.info(bot.pending_answers)
     await bot.send_input("Birch")
-    assert await answer == "Birch"
+    logging.info(bot.pending_answers)
+    assert await asyncio.wait_for(answer, timeout=1) == "Birch"
