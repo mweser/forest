@@ -602,6 +602,7 @@ class Bot(Signal):
                     self.pending_requests[rpc_id] = asyncio.Future()
                     await self.outbox.put(sent_json_message)
                 continue
+
             self.pending_response_tasks = [
                 task for task in self.pending_response_tasks if not task.done()
             ] + [asyncio.create_task(self.respond_and_collect_metrics(message))]

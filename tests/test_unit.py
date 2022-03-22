@@ -177,9 +177,11 @@ async def test_questions(bot) -> None:
     logging.info("after ask, before sleep: %s", bot.pending_answers)
     await asyncio.sleep(0)
     logging.info("after sleep: %s", bot.pending_answers)
-    await bot.send_input("Birch")
+    asyncio.create_task(bot.send_input("Birch"))
     logging.info("after input: %s", bot.pending_answers)
-    res = await asyncio.wait_for(answer, timeout=1) == "Birch"
+    await asyncio.sleep(0)
+    logging.info("after input: %s", bot.pending_answers)
+    res = await asyncio.wait_for(answer, timeout=5) == "Birch"
     logging.info("after await: %s", bot.pending_answers)
     assert res
 
