@@ -9,7 +9,7 @@ import logging
 import random
 import ssl
 import time
-from typing import Any, Optional, List
+from typing import Any, Optional
 
 import aiohttp
 import asyncpg
@@ -33,8 +33,9 @@ else:
     ssl_context.verify_mode = ssl.CERT_REQUIRED
     ssl_context.load_cert_chain(certfile="client.full.pem")
 
-MICROMOB_TO_PICOMOB = 1_000_000
-MILLIMOB_TO_PICOMOB = 1_000_000_000
+MICROMOB_TO_PICOMOB = 1_000_000  # that's 1e12/1e6
+MILLIMOB_TO_PICOMOB = 1_000_000_000  # that's 1e12/1e3
+FEE_PMOB = int(1e12 * 0.0004)  # Mobilecoin transaction fee in Picomob.
 
 DATABASE_URL = utils.get_secret("DATABASE_URL")
 LedgerPGExpressions = PGExpressions(
@@ -144,26 +145,57 @@ class Mobster:
             return sorted_
         return {}
 
+    async def merge(self, amount: int, locked: list[str]) -> list[str]:
+        # use a sliding window of up to 15 starting from smalled txos and working up
+        # choose a set of txos attempting to get a txo of specified size, or none
+        pass
+
+    # these sorts of plans need a placeholder for future outputs
+    # or it could be more imperative and figure it out as we go along
+    async def repeated_merge(self, amount: int, locked: list[str]) -> list[list[str]]:
+        # smallest number of txs, greatest amount of dust swept
+        # (or minimize locked / remaining currently possible single-tx inputs for the same amount)
+        pass
+
+    async def split(
+        self, amount_mmob: int, count: int, locked: list[str]
+    ) -> list[list[str]]:
+        # attempt to build a specified number of txos
+        # maybe this returns dict[str, list[int]]
+        # however, there's a situation where you could completely fail to split but be ok
+        # if you have 150 0.1 mob transactions. you need to make 10 1 mob payments.
+        # split would completely fail, but you could make the necessary payments without any prep
+        # if you first merged and then split, it would still work out, but would be extra transactions
+        pass
+
+    async def split_or_merge_as_needed(self, amount, value):
+        # ensure there are enough txos of any size to send the required number of payments
+        # if there are txos that are bigger than the value, we can split them
+        # if there are txos that are smaller, merge them
+        # if there are multiple txos that can be used for a single transaction, keep that
+        pass
+
     async def split_txos_slow(
         self, output_millimob: int = 100, target_quantity: int = 200
     ) -> str:
-        output_millimob = int(output_millimob)
+        output_pmob = output_millimob * MILLIMOB_TO_PICOMOB + FEE_PMOB
         built = 0
         i = 0
-        utxos: List[str] = []
+        utxos: list[str] = []
         while built < (target_quantity + 3):
             if len(utxos) < 1:
-                utxos = list(reversed(await self.get_utxos()))
+                # if we have few big txos, we can have a lot of change we don't see yet
+                # so if we've run out of txos we check for change from previous iterations
+                utxos = list(reversed((await self.get_utxos()).items()))
+            txo_id, value = utxos.pop(0)
+            if value / output_pmob < 2:
+                continue
             split_transaction = await self.req_(
                 "build_split_txo_transaction",
                 **dict(
-                    txo_id=utxos.pop(0),
+                    txo_id=txo_id,
                     output_values=[
-                        str(
-                            output_millimob * MILLIMOB_TO_PICOMOB
-                            + 400 * MICROMOB_TO_PICOMOB
-                        )
-                        for _ in range(15)
+                        str(output_pmob) for _ in range(min(value // output_pmob, 15))
                     ],
                 ),
             )
@@ -173,6 +205,7 @@ class Mobster:
                 results = await self.req_("submit_transaction", **params)
             else:
                 results = {}
+            # not only did we have params, submitting also had a result
             if results.get("results"):
                 await asyncio.sleep(2)
                 built += 15
