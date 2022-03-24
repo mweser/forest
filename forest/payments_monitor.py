@@ -4,12 +4,13 @@
 
 import asyncio
 import base64
+import itertools
 import json
 import logging
 import random
 import ssl
 import time
-from typing import Any, Optional
+from typing import Any, Optional, Iterator, TypeVar
 
 import aiohttp
 import asyncpg
@@ -83,6 +84,16 @@ class LedgerManager(PGInterface):
         super().__init__(queries, database, loop)
 
 
+V = TypeVar("V")
+
+
+def powerset(iterable: list[V]) -> Iterator[tuple[V, ...]]:
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    return itertools.chain.from_iterable(
+        itertools.combinations(iterable, r) for r in range(min(len(iterable) + 1, 15))
+    )
+
+
 class Mobster:
     """Class to keep track of a aiohttp session and cached rate"""
 
@@ -146,9 +157,20 @@ class Mobster:
         return {}
 
     async def merge(self, amount: int, locked: list[str]) -> list[str]:
+        txos = [(k, v) for k, v in (await self.get_utxos()).items() if k not in locked]
         # use a sliding window of up to 15 starting from smalled txos and working up
         # choose a set of txos attempting to get a txo of specified size, or none
-        pass
+        selected = list(
+            next(
+                filter(
+                    lambda combo: sum(txo[1] for txo in combo) >= amount, powerset(txos)
+                )
+            )
+        )
+        dust = [txo for txo in txos if txo[1] < amount and txo not in selected][
+            : 15 - len(selected)
+        ]
+        return [tx_id for tx_id, value in (selected + dust)]
 
     # these sorts of plans need a placeholder for future outputs
     # or it could be more imperative and figure it out as we go along
@@ -168,7 +190,7 @@ class Mobster:
         # if you first merged and then split, it would still work out, but would be extra transactions
         pass
 
-    async def split_or_merge_as_needed(self, amount, value):
+    async def split_or_merge_as_needed(self, amount: int, value_pmob: int) -> None:
         # ensure there are enough txos of any size to send the required number of payments
         # if there are txos that are bigger than the value, we can split them
         # if there are txos that are smaller, merge them
@@ -181,7 +203,7 @@ class Mobster:
         output_pmob = output_millimob * MILLIMOB_TO_PICOMOB + FEE_PMOB
         built = 0
         i = 0
-        utxos: list[str] = []
+        utxos: list[tuple[str, int]] = []
         while built < (target_quantity + 3):
             if len(utxos) < 1:
                 # if we have few big txos, we can have a lot of change we don't see yet
