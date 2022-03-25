@@ -88,9 +88,10 @@ V = TypeVar("V")
 
 
 def powerset(iterable: list[V]) -> Iterator[tuple[V, ...]]:
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    "powerset([1,2,3]) --> (1, 2, 3) (1, 2) (1, 3) (2, 3) (1,) (2,) (3,)"
     return itertools.chain.from_iterable(
-        itertools.combinations(iterable, r) for r in range(min(len(iterable) + 1, 15))
+        itertools.combinations(iterable, r)
+        for r in range(min(len(iterable) + 1, 15), 0, -1)
     )
 
 
@@ -156,27 +157,68 @@ class Mobster:
             return sorted_
         return {}
 
+    def loss(txs: list[tuple[str, int]]) -> tuple[float]:
+        # we will sort in ascending order
+        # maximize tx size, minimize amount, minimize average amount
+        values = [value for _, value in txs]
+        return [-len(values), sum(values), sum(values) / len(values)]
+
     async def merge(self, amount: int, locked: list[str]) -> list[str]:
         txos = [(k, v) for k, v in (await self.get_utxos()).items() if k not in locked]
         # use a sliding window of up to 15 starting from smalled txos and working up
         # choose a set of txos attempting to get a txo of specified size, or none
         selected = list(
             next(
-                filter(
-                    lambda combo: sum(txo[1] for txo in combo) >= amount, powerset(txos)
+                sorted(
+                    filter(
+                        lambda combo: sum(value for _, value in combo) >= amount,
+                        powerset(txos),
+                    ),
+                    key=loss,
                 )
             )
         )
+        # maximize tx, minimize value, minimize size of selected txs
+        # selected should be the shortest/cheapest combination above amount
         dust = [txo for txo in txos if txo[1] < amount and txo not in selected][
             : 15 - len(selected)
         ]
         return [tx_id for tx_id, value in (selected + dust)]
 
+    # i want to send a 1 mob transaction. which utxos should i pick in the following scenarios?
+
+    # 1.00
+    # .99
+    # .98
+    # .01 * 100 dust
+
+    # 0.51
+    # 0.50 x2
+    # 0.49
+    # 0.40
+    # 0.20
+    # 0.01 * 100 dust
+
     # these sorts of plans need a placeholder for future outputs
     # or it could be more imperative and figure it out as we go along
-    async def repeated_merge(self, amount: int, locked: list[str]) -> list[list[str]]:
+    async def repeated_merge(
+        self, amount: int, locked: set[str], history: list[list[str]]
+    ) -> list[list[str]]:
+        def sum_txo(txos: list[tuple[str, int]]):
+            return sum(value for _, value in txos)
+
         # smallest number of txs, greatest amount of dust swept
         # (or minimize locked / remaining currently possible single-tx inputs for the same amount)
+        txos = [(k, v) for k, v in (await self.get_utxos()).items() if k not in locked]
+        if not txos:
+            return history
+        for combo in powerset(locked):
+            now_locked = locked | set(tx_id for tx_id, _ in combo)
+
+            if not now_locked:
+                yield combo
+            yield from await self.repeated_merge(amount, now_locked, history + [combo])
+
         pass
 
     async def split(
