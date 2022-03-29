@@ -8,6 +8,8 @@ from forest import utils
 from forest.core import JSON, Message, Response, run_bot, rpc
 from forest.memorybot import MemoryBot
 from personate.core.reader_agent import ReaderAgent
+from imogen import Imogen, app
+
 
 # from acrossword import Ranker # For ranking facts & examples with plain Agent
 
@@ -18,7 +20,7 @@ from personate.core.reader_agent import ReaderAgent
 # Can we build a Memory here? from pdictng?
 
 
-class Imposter(MemoryBot):
+class Imposter(MemoryBot, Imogen):
     def __init__(self) -> None:
         # Accept a JSON config file in the same format as Personate.
         # Can be generated at https://ckoshka.github.io/personate/
@@ -144,4 +146,4 @@ class Imposter(MemoryBot):
 
 
 if __name__ == "__main__":
-    run_bot(Imposter)
+    run_bot(Imposter, app)
