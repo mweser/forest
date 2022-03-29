@@ -33,6 +33,7 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    Coroutine,
     Mapping,
     Optional,
     Tuple,
@@ -40,8 +41,8 @@ from typing import (
     TypeVar,
     Union,
 )
-
 import aiohttp
+import asyncpg
 import termcolor
 from aiohttp import web
 from phonenumbers import NumberParseException
@@ -52,11 +53,12 @@ from ulid2 import generate_ulid_as_base32 as get_uid
 # framework
 import mc_util
 from forest import autosave, datastore, payments_monitor, pghelp, string_dist, utils
-from forest.message import AuxinMessage, Message, StdioMessage
+from forest.message import AuxinMessage, Message, Reaction, StdioMessage
 
 JSON = dict[str, Any]
 Response = Union[str, list, dict[str, str], None]
 AsyncFunc = Callable[..., Awaitable]
+Command = Callable[["Bot", Message], Coroutine[Any, Any, Response]]
 
 roundtrip_histogram = Histogram("roundtrip_h", "Roundtrip message response time")  # type: ignore
 roundtrip_summary = Summary("roundtrip_s", "Roundtrip message response time")
@@ -67,7 +69,7 @@ fee_pmob = int(1e12 * 0.0004)
 try:
     import captcha
 except ImportError:
-    captcha = None  # type:ignore
+    captcha = None  # type: ignore
 
 
 def rpc(
@@ -79,6 +81,20 @@ def rpc(
         "id": _id,
         "params": (param_dict or {}) | params,
     }
+
+
+ActivityQueries = pghelp.PGExpressions(
+    table="user_activity",
+    create_table="""CREATE TABLE user_activity (
+        id SERIAL PRIMARY KEY,
+        account TEXT,
+        first_seen TIMESTAMP default now(),
+        last_seen TIMESTAMP default now(),
+        bot TEXT,
+        UNIQUE (account, bot));""",
+    log="""INSERT INTO user_activity (account, bot) VALUES ($1, $2)
+    ON CONFLICT ON CONSTRAINT user_activity_account_bot_key DO UPDATE SET last_seen=now()""",
+)
 
 
 class Signal:
@@ -101,11 +117,17 @@ class Signal:
         logging.debug("bot number: %s", bot_number)
         self.bot_number = bot_number
         self.datastore = datastore.SignalDatastore(bot_number)
+        self.activity = pghelp.PGInterface(
+            query_strings=ActivityQueries, database=utils.get_secret("DATABASE_URL")
+        )
+        # set of users we've received messages from in the last minute
+        self.seen_users: set[str] = set()
         self.proc: Optional[subprocess.Process] = None
         self.inbox: Queue[Message] = Queue()
         self.outbox: Queue[dict] = Queue()
         self.exiting = False
         self.start_time = time.time()
+        self.sent_messages: dict[int, JSON] = {}
 
     async def start_process(self) -> None:
         """
@@ -128,6 +150,7 @@ class Signal:
                 path += " --download-path /tmp"
             else:
                 path += " --trust-new-identities always"
+                # path += " --verbose"
             command = f"{path} --config {utils.ROOT_DIR} --user {self.bot_number} jsonRpc".split()
             logging.info(command)
             proc_launch_time = time.time()
@@ -273,6 +296,10 @@ class Signal:
                 # maybe also send this to admin as a signal message
                 for _line in tb:
                     logging.error(_line)
+            if "sender keys" in blob["error"] and self.proc:
+                logging.error("killing signal-cli")
+                self.proc.kill()
+                return
         # {"jsonrpc":"2.0","method":"receive","params":{"envelope":{"source":"+16176088864","sourceNumber":"+16176088864","sourceUuid":"412e180d-c500-4c60-b370-14f6693d8ea7","sourceName":"sylv","sourceDevice":3,"timestamp":1637290344242,"dataMessage":{"timestamp":1637290344242,"message":"/ping","expiresInSeconds":0,"viewOnce":false}},"account":"+447927948360"}}
         try:
             await self.enqueue_blob_messages(blob)
@@ -352,9 +379,10 @@ class Signal:
         return rpc_id
 
     async def save_sent_message(self, rpc_id: str, params: dict[str, str]) -> None:
-        # do something with sent messages after sending them
-        # override in child classes
-        pass
+        result = await self.pending_requests[rpc_id]
+        logging.info("got timestamp %s for blob %s", result.timestamp, params)
+        self.sent_messages[result.timestamp] = params
+        self.sent_messages[result.timestamp]["reactions"] = {}
 
     # this should maybe yield a future (eep) and/or use signal_rpc_request
     async def send_message(  # pylint: disable=too-many-arguments
@@ -533,9 +561,12 @@ def is_admin(msg: Message) -> bool:
     return source_admin or source_uuid or bool(msg.group and msg.group in ADMIN_GROUP)
 
 
-def requires_admin(command: Callable) -> Callable:
+B = TypeVar("B", bound="Bot")
+
+
+def requires_admin(command: AsyncFunc) -> AsyncFunc:
     @wraps(command)
-    async def admin_command(self: "Bot", msg: Message) -> Response:
+    async def admin_command(self: B, msg: Message) -> Response:
         if is_admin(msg):
             return await command(self, msg)
         return "you must be an admin to use this command"
@@ -545,13 +576,25 @@ def requires_admin(command: Callable) -> Callable:
     return admin_command
 
 
-def hide(command: Callable) -> Callable:
+def hide(command: AsyncFunc) -> AsyncFunc:
     @wraps(command)
-    async def hidden_command(self: "Bot", msg: Message) -> Response:
+    async def hidden_command(self: B, msg: Message) -> Response:
         return await command(self, msg)
 
     hidden_command.hide = True  # type: ignore
     return hidden_command
+
+
+def group_help_text(text: str) -> Callable:
+    def decorate(command: Callable) -> Callable:
+        @wraps(command)
+        async def group_help_text_command(self: "Bot", msg: Message) -> Response:
+            return await command(self, msg)
+
+        group_help_text_command.__group_doc__ = text  # type: ignore
+        return group_help_text_command
+
+    return decorate
 
 
 Datapoint = tuple[int, str, float]  # timestamp in ms, command/info, latency in seconds
@@ -579,6 +622,7 @@ class Bot(Signal):
             if not hasattr(getattr(self, f"do_{name}"), "hide")
         ]
         super().__init__(bot_number)
+        self.log_task = asyncio.create_task(self.log_activity())
         self.restart_task = asyncio.create_task(
             self.start_process()
         )  # maybe cancel on sigint?
@@ -589,6 +633,32 @@ class Bot(Signal):
             self.restart_task_callback(self.handle_messages)
         )
 
+    async def log_activity(self) -> None:
+        """
+        every 60s, update the table of user_activity with the new users
+        this is run in the background as batches,
+        so we aren't making a seperate db query for every message
+        """
+        if not self.activity.pool:
+            await self.activity.connect_pg()
+            assert self.activity.pool
+        while 1:
+            await asyncio.sleep(60)
+            if not self.seen_users:
+                continue
+            try:
+                async with self.activity.pool.acquire() as conn:
+                    # executemany batches this into an atomic db query
+                    await conn.executemany(
+                        self.activity.queries["log"],
+                        [(name, utils.APP_NAME) for name in self.seen_users],
+                    )
+                    logging.debug("recorded %s seen users", len(self.seen_users))
+                    self.seen_users: set[str] = set()
+            except asyncpg.UndefinedTableError:
+                logging.info("creating user_activity table")
+                await self.activity.create_table()
+
     async def handle_messages(self) -> None:
         """
         Read messages from the queue. If it matches a pending request to auxin-cli/signal-cli,
@@ -597,6 +667,8 @@ class Bot(Signal):
         """
         while True:
             message = await self.inbox.get()
+            if message.source:
+                self.seen_users.add(message.source)
             if message.id and message.id in self.pending_requests:
                 logging.debug("setting result for future %s: %s", message.id, message)
                 self.pending_requests[message.id].set_result(message)
@@ -659,6 +731,22 @@ class Bot(Signal):
                     f"command: {note}. python delta: {python_delta}s. roundtrip delta: {roundtrip_delta}s",
                 )
 
+    async def handle_reaction(self, msg: Message) -> Response:
+        """
+        route a reaction to the original message.
+        #if the number of reactions that message has is a fibonacci number, notify the message's author
+        this is probably flakey, because signal only gives us timestamps and
+        not message IDs
+        """
+        assert isinstance(msg.reaction, Reaction)
+        react = msg.reaction
+        logging.debug("reaction from %s targeting %s", msg.source, react.ts)
+        if react.author != self.bot_number or react.ts not in self.sent_messages:
+            return None
+        self.sent_messages[react.ts]["reactions"][msg.source] = react.emoji
+        logging.debug("found target message %s", repr(self.sent_messages[react.ts]))
+        return None
+
     def mentions_us(self, msg: Message) -> bool:
         # "mentions":[{"name":"+447927948360","number":"+447927948360","uuid":"fc4457f0-c683-44fe-b887-fe3907d7762e","start":0,"length":1}
         return any(mention.get("number") == self.bot_number for mention in msg.mentions)
@@ -701,6 +789,9 @@ class Bot(Signal):
         """Method dispatch to do_x commands and goodies.
         Overwrite this to add your own non-command logic,
         but call super().handle_message(message) at the end"""
+        if message.reaction:
+            logging.info("saw a reaction")
+            return await self.handle_reaction(message)
         # try to get a direct match, or a fuzzy match if appropriate
         if cmd := self.match_command(message):
             # invoke the function and return the response
@@ -1650,6 +1741,12 @@ async def restart(request: web.Request) -> web.Response:
 app = web.Application()
 
 
+async def recipients(request: web.Request) -> web.Response:
+    bot = request.app["bot"]
+    recipeints = open(f"data/{bot.bot_number}.d/recipients-store").read()
+    return web.Response(status=200, text=recipeints)
+
+
 async def add_tiprat(_app: web.Application) -> None:
     async def tiprat(request: web.Request) -> web.Response:
         raise web.HTTPFound("https://tiprat.fly.dev", headers=None, reason=None)
@@ -1666,6 +1763,7 @@ app.add_routes(
         web.post("/restart", restart),
         web.get("/metrics", aio.web.server_stats),
         web.get("/csv_metrics", metrics),
+        web.get("/recipients", recipients),
     ]
 )
 
