@@ -1229,7 +1229,8 @@ class QuestionBot(PayBot):
         answer_future = self.pending_answers[recipient] = asyncio.Future()
         if require_first_device:
             self.requires_first_device[recipient] = True
-        answer = await answer_future
+        answer = await asyncio.wait_for(answer_future, timeout=30)
+        #answer = await answer_future
         self.pending_answers.pop(recipient)
         return answer.full_text or ""
 
