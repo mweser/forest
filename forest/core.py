@@ -461,7 +461,9 @@ class Signal:
                     return ""
             params["recipient"] = str(recipient)
         if recipient and utils.AUXIN:
-            params["destination"] = str(recipient or group)
+            params["destination"] = str(recipient)
+        if group and utils.AUXIN:
+            params["group"] = group
         # maybe use rpc() instead
         rpc_id = f"send-{get_uid()}"
         json_command: JSON = {
