@@ -1,7 +1,8 @@
 FROM ubuntu:hirsute as auxin
 WORKDIR /app
 RUN apt-get update && apt-get -yy install curl unzip
-RUN curl -L --output auxin-cli.zip https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
+ENV A=1
+RUN curl -L --output auxin-cli.zip https://nightly.link/mobilecoinofficial/auxin/workflows/actions/feature%2Fgroup-improvements/auxin-cli.zip
 RUN unzip auxin-cli.zip && chmod +x ./auxin-cli
 
 FROM python:3.9 as libbuilder
@@ -22,5 +23,7 @@ RUN apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,
 COPY --from=auxin /app/auxin-cli /app/
 COPY --from=libbuilder /app/venv/lib/python3.9/site-packages /app/
 COPY --from=kubectl /opt/bitnami/kubectl/bin/kubectl /usr/local/bin/
+COPY ./mc_util/ /app/mc_util/
+COPY ./forest/ /app/forest/
 COPY ./imogen.py ./free-imagegen-job.yaml ./paid-imagegen-job.yaml ./a6000.yaml ./esrgan-job.yaml /app/ 
 ENTRYPOINT ["/usr/bin/python3.9", "/app/imogen.py"]

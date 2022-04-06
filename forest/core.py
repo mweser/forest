@@ -53,6 +53,7 @@ from ulid2 import generate_ulid_as_base32 as get_uid
 # framework
 import mc_util
 from forest import autosave, datastore, payments_monitor, pghelp, string_dist, utils
+from forest.cryptography import hash_salt
 from forest.message import AuxinMessage, Message, Reaction, StdioMessage
 
 JSON = dict[str, Any]
@@ -93,7 +94,7 @@ ActivityQueries = pghelp.PGExpressions(
         bot TEXT,
         UNIQUE (account, bot));""",
     log="""INSERT INTO user_activity (account, bot) VALUES ($1, $2)
-    ON CONFLICT ON CONSTRAINT user_activity_account_bot_key DO UPDATE SET last_seen=now()""",
+    ON CONFLICT ON CONSTRAINT user_activity_account_bot_key1 DO UPDATE SET last_seen=now()""",
 )
 
 
@@ -511,6 +512,51 @@ class Signal:
         )
         await self.outbox.put(cmd)
 
+    async def typing_message_content(
+        self, stop: bool = False, group_id: str = ""
+    ) -> str:
+        "serialized typing message content to pass to auxin --content for turning into protobufs"
+        resp = await self.signal_rpc_request(
+            "send", simulate=True, message="", destination="+15555555555"
+        )
+        # simulate gives us a dict corresponding to the protobuf structure
+        content_skeletor = json.loads(resp.blob["simulate_output"])
+        # typingMessage excludes having a dataMessage
+        content_skeletor["dataMessage"] = None
+        content_skeletor["typingMessage"] = {
+            "action": "STOPPED" if stop else "STARTED",
+            "timestamp": int(time.time() * 1000),
+        }
+        if group_id:
+            content_skeletor["typingMessage"]["groupId"] = group_id
+        return json.dumps(content_skeletor)
+
+    async def send_typing(
+        self,
+        msg: Optional[Message] = None,
+        stop: bool = False,
+        recipient: str = "",
+        group: str = "",
+    ) -> None:
+        "Send a typing indicator to the person or group the message is from"
+        # typing indicators last 15s on their own
+        # https://github.com/signalapp/Signal-Android/blob/master/app/src/main/java/org/thoughtcrime/securesms/components/TypingStatusRepository.java#L32
+        if msg:
+            group = msg.group or ""
+            recipient = msg.source
+        if utils.AUXIN:
+            if group:
+                content = await self.typing_message_content(stop, group)
+                await self.send_message(None, "", group=group, content=content)
+            else:
+                content = await self.typing_message_content(stop)
+                await self.send_message(recipient, "", content=content)
+            return
+        if group:
+            await self.outbox.put(rpc("sendTyping", group_id=[group], stop=stop))
+        else:
+            await self.outbox.put(rpc("sendTyping", recipient=[recipient], stop=stop))
+
     backoff = False
     messages_until_rate_limit = 1000.0
     last_update = time.time()
@@ -624,7 +670,12 @@ class Bot(Signal):
             if not hasattr(getattr(self, f"do_{name}"), "hide")
         ]
         super().__init__(bot_number)
-        self.log_task = asyncio.create_task(self.log_activity())
+        self.activity = pghelp.PGInterface(
+            query_strings=ActivityQueries, database=utils.get_secret("DATABASE_URL")
+        )
+        # set of users we've received messages from in the last minute
+        self.seen_users: set[str] = set()
+        self.log_activity_task = asyncio.create_task(self.log_activity())
         self.restart_task = asyncio.create_task(
             self.start_process()
         )  # maybe cancel on sigint?
@@ -637,12 +688,13 @@ class Bot(Signal):
 
     async def log_activity(self) -> None:
         """
-        every 60s, update the table of user_activity with the new users
-        this is run in the background as batches,
-        so we aren't making a seperate db query for every message
+        every 60s, update the user_activity table with users we've seen
+        runs in the bg as batches to avoid a seperate db query for every message
+        used for signup metrics
         """
         if not self.activity.pool:
             await self.activity.connect_pg()
+            # mypy can't infer that connect_pg creates pool
             assert self.activity.pool
         while 1:
             await asyncio.sleep(60)
@@ -656,7 +708,7 @@ class Bot(Signal):
                         [(name, utils.APP_NAME) for name in self.seen_users],
                     )
                     logging.debug("recorded %s seen users", len(self.seen_users))
-                    self.seen_users: set[str] = set()
+                    self.seen_users = set()
             except asyncpg.UndefinedTableError:
                 logging.info("creating user_activity table")
                 await self.activity.create_table()
@@ -667,10 +719,11 @@ class Bot(Signal):
         set the result for that request. If said result is being rate limited, retry sending it
         after pausing. Otherwise, concurrently respond to each message.
         """
+        metrics_salt = utils.get_secret("METRICS_SALT")
         while True:
             message = await self.inbox.get()
-            if message.source:
-                self.seen_users.add(message.source)
+            if metrics_salt and message.uuid:
+                self.seen_users.add(hash_salt(message.uuid, metrics_salt))
             if message.id and message.id in self.pending_requests:
                 logging.debug("setting result for future %s: %s", message.id, message)
                 self.pending_requests[message.id].set_result(message)
@@ -1436,13 +1489,12 @@ class QuestionBot(PayBot):
             recipient, question_text, require_first_device
         )
 
-    async def ask_address_question(
+    async def ask_address_question_(
         self,
         recipient: str,
         question_text: str = "What's your shipping address?",
-        require_first_device: bool = False,
         require_confirmation: bool = False,
-    ) -> Optional[str]:
+    ) -> Optional[dict]:
         """Asks user for their address and verifies through the google maps api
         Can ask User for confirmation, returns string with formatted address or none"""
         # get google maps api key from secrets
@@ -1451,9 +1503,7 @@ class QuestionBot(PayBot):
             logging.error("Error, missing Google Maps API in secrets configuration")
             return None
         # ask for the address as a freeform question
-        address = await self.ask_freeform_question(
-            recipient, question_text, require_first_device
-        )
+        address = await self.ask_freeform_question(recipient, question_text)
         # we take the answer provided by the user, format it nicely as a request to google maps' api
         # It returns a JSON object from which we can ascertain if the address is valid
         async with self.client_session.get(
@@ -1471,8 +1521,8 @@ class QuestionBot(PayBot):
                 recipient,
                 "Sorry, I couldn't find that. \nPlease try again or reply cancel to cancel \n",
             )
-            return await self.ask_address_question(
-                recipient, question_text, require_first_device, require_confirmation
+            return await self.ask_address_question_(
+                recipient, question_text, require_confirmation
             )
         # if maps does return a formatted address
         if address_json["results"] and address_json["results"][0]["formatted_address"]:
@@ -1484,20 +1534,32 @@ class QuestionBot(PayBot):
                 confirmation = await self.ask_yesno_question(
                     recipient,
                     f"Got: \n{maybe_address} \n\n{maps_url} \n\nIs this your address? (yes/no)",
-                    require_first_device,
                 )
                 # If not, ask again
                 if not confirmation:
-                    return await self.ask_address_question(
+                    return await self.ask_address_question_(
                         recipient,
                         question_text,
-                        require_first_device,
                         require_confirmation,
                     )
-            return address_json["results"][0]["formatted_address"]
+            return address_json["results"][0]  # ["formatted_address"]
         # If we made it here something unexpected probably went wrong.
         # Google returned something but didn't have a formatted address
         return None
+
+    async def ask_address_question(
+        self,
+        recipient: str,
+        question_text: str = "What's your shipping address?",
+        require_first_device: bool = False,
+        require_confirmation: bool = False,
+    ) -> Optional[dict]:
+        addr = await self.ask_address_question_(
+            recipient, question_text, require_confirmation
+        )
+        if addr:
+            return addr["formatted_address"]
+        return addr
 
     async def ask_multiple_choice_question(  # pylint: disable=too-many-arguments
         self,
