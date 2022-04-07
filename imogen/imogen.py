@@ -1,7 +1,6 @@
 #!/usr/bin/python3.9
 # Copyright (c) 2022 Sylvie Liberman
 # Copyright (c) 2022 The Forest Team
-
 import asyncio
 import base64
 import json
@@ -18,10 +17,11 @@ import aioredis
 import openai
 from aiohttp import web
 
+import mc_util
 from forest import pghelp, utils
 from forest.core import (
     Message,
-    PayBot,
+    QuestionBot,
     Response,
     UserError,
     app,
@@ -50,6 +50,22 @@ class InsertedPrompt:
             json.dumps(self.params),
             self.url,
         ]
+
+
+PurseExpressions = pghelp.PGExpressions(
+    table="purse_ledger",
+    create_table="""CREATE TABLE purse_ledger (
+        id SERIAL PRIMARY KEY,
+        account TEXT,
+        amount BIGINT,
+        ts TIMESTAMP DEFAULT now(),
+        memo TEXT,
+        prompt_id BIGINT,
+        tx_id TEXT);
+    );""",
+    add_tx="INSERT INTO {self.table} (account, amount, memo, tx_id, prompt_id) VALUES ($1, $2, $3, $4, $5);",
+    stats="SELECT sum(amount)/1e12, count(id) FROM prompt_queue WHERE extract(second from now() - sent_ts) < $1",
+)
 
 
 QueueExpressions = pghelp.PGExpressions(
@@ -200,14 +216,13 @@ auto_messages = [
 ]
 
 
-class Imogen(PayBot):  # pylint: disable=too-many-public-methods
+class Imogen(QuestionBot):  # pylint: disable=too-many-public-methods
     prompts: dict[str, str] = {}
 
     async def start_process(self) -> None:
-        self.queue = pghelp.PGInterface(
-            query_strings=QueueExpressions,
-            database=utils.get_secret("DATABASE_URL"),
-        )
+        db = utils.get_secret("DATABASE_URL")
+        self.queue = pghelp.PGInterface(query_strings=QueueExpressions, database=db)
+        self.ledger = pghelp.PGInterface(query_strings=PurseExpressions, database=db)
         await self.admin("\N{deciduous tree}\N{robot face}\N{hiking boot}")
         await super().start_process()
 
@@ -250,18 +265,67 @@ class Imogen(PayBot):  # pylint: disable=too-many-public-methods
                 await self.send_message(None, message, group=msg.group, **quote)
             else:
                 await self.send_message(msg.source, message, **quote)
-        # if current_reaction_count in (2, 6):
-        #     await self.admin(f"trying to pay {prompt_author}")
-        #     await self.client_session.post(
-        #         utils.get_secret("PURSE_URL") + "/pay",
-        #         data={
-        #             "destination": prompt_author,
-        #             "amount": 0.01,
-        #             "message": f'sent you a tip for your prompt "{prompt.get("prompt")}" getting {current_reaction_count} reactions',
-        #             "prompt_id": prompt.get("id"),
-        #         },
-        #     )
-        #     return None
+        await self.award(
+            prompt_author,
+            0.002,
+            f'sent you a tip for your prompt "{prompt.get("prompt")}" getting {current_reaction_count} reactions',
+            prompt_id=prompt.get("id"),
+        )
+        await self.award(
+            msg.source,
+            0.001,
+            f"sent you a tip for reacting",
+            prompt_id=prompt.get("id"),
+            reason="reacting",
+        )
+
+    async def award(
+        self,
+        recipient: str,
+        amount: float,
+        message: str,
+        reason: str = "your popular prompt",
+        prompt_id: str = "",
+    ) -> None:
+        amount_pmob = mc_util.mob2pmob(amount)
+        for i in range(3):
+            if await self.get_signalpay_address(recipient):
+                try:
+                    payment = await self.send_payment(
+                        recipient,
+                        amount_pmob,
+                        message,
+                        comment=f"prompt payment to {recipient}",
+                    )
+                    if payment and payment.status == "tx_status_succeeded":
+                        await self.ledger.add_tx(
+                            recipient,
+                            amount_pmob,
+                            message,
+                            getattr(payment, "transaction_log_id", ""),
+                            f"{reason} {prompt_id}",
+                        )
+                        break
+                except UserError:
+                    pass
+            # send activation gif
+            payments = await self.ask_yesno_question(
+                recipient,
+                (
+                    f"I'm trying to send you a tip for {reason} with Imogen, but couldn't get your MobileCoin address.\n\n"
+                    "Do you have payments enabled?"
+                ),
+                require_first_device=True,
+            )
+            if payments:
+                if not await self.get_signalpay_address(recipient):
+                    await self.ask_freeform_question(
+                        recipient,
+                        "Hmm, I still can't get your address, could you message me from your phone? If this issue persists, try deactivating and reactivating payments.",
+                        require_first_device=True,
+                    )
+            else:
+                await self.send_message(recipient, messages["activate_payments"])
 
     def match_command(self, msg: Message) -> str:
         if msg.full_text and msg.full_text.lower().startswith("computer"):
