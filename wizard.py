@@ -53,7 +53,7 @@ progress = Progress(
 
 
 # change this to opening from another file
-tree = open('tree').read()
+tree = open("tree").read()
 # prep opening the readme
 rdme = open("README.md").read()
 
@@ -70,9 +70,9 @@ def main():
     menu = inquirer.select(
         message="Welcome to the forest setup wizard.",
         choices=[
-            Choice(value=settings, name="Get Started / Change Settings"), 
+            Choice(value=settings, name="Get Started / Change Settings"),
             Choice(value=do_docs, name="Read documentation"),
-            Choice(value=do_update, name="Update from Git"), 
+            Choice(value=do_update, name="Update from Git"),
             Choice(value=do_exit, name="Exit"),
         ],
         default=None,
@@ -140,7 +140,9 @@ def change_secrets(new_values: dict[str, str], **kwargs: str) -> None:
     secrets = parse_secrets(open(f"{env}_secrets").read())
     # py3.9 introduced dict unions
     changed = secrets | new_values | kwargs
-    open(f"{env}_secrets", "w+").write("\n".join(f"{k}={v}" for k, v in changed.items()))
+    open(f"{env}_secrets", "w+").write(
+        "\n".join(f"{k}={v}" for k, v in changed.items())
+    )
 
 
 def do_number():
@@ -151,7 +153,13 @@ def do_number():
 
 
 def set_admin() -> None:
-    change_secrets({"ADMIN": Prompt.ask("Please enter your phone number in international format, e.x: +19991238458")})
+    change_secrets(
+        {
+            "ADMIN": Prompt.ask(
+                "Please enter your phone number in international format, e.x: +19991238458"
+            )
+        }
+    )
 
 
 def do_rust():
@@ -184,14 +192,32 @@ def fetch_auxin():
         )
         do_unzip(archive="auxin.zip")
 
+    # os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
+    # os.system("rustup default nightly")
 
-    #os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
-    #os.system("rustup default nightly")
+
+def fetch_captcha():
+    # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
+    progress.add_task("Downloading captcha helper")
+    copy_url(
+        task1,
+        url=f"https://gitlab.com/api/v4/projects/27947268/jobs/artifacts/main/raw/signal-captcha-helper?job=build%3Aamd64",
+        path="./signal-captcha",
+    )
+    subprocess.run(
+        "chmod +x signal-captcha",
+        shell=True,
+    )
+    captcha = subprocess.run("./signal-captcha", capture_output=True)
+    # redirect to forest contact, prompt for a number, register
+    # prompt for code/redirect to forest contact, verify, upload upload
+    # see https://github.com/forestcontact/go_ham/blob/main/register.py
+    # though most of that is replaced by redirecting to forest contact
 
 
 def switch_auxin():
     if Confirm.ask("Would you like to switch to Auxin?"):
-        change_secrets({"SIGNAL":"auxin"})
+        change_secrets({"SIGNAL": "auxin"})
 
 
 def do_update():
@@ -202,15 +228,15 @@ def do_update():
 
 def do_signalcli():
     if Confirm.ask("Would you like to switch to Signal-CLI?"):
-        change_secrets({"SIGNAL":"signal-cli"})
-    #task1 = progress.add_task("Downloading...")
-    #v = "0.10.3"
-    #copy_url(
+        change_secrets({"SIGNAL": "signal-cli"})
+    # task1 = progress.add_task("Downloading...")
+    # v = "0.10.3"
+    # copy_url(
     #    task1,
     #    url=f"https://github.com/AsamK/signal-cli/releases/download/v{v}/signal-cli-{v}-Linux.tar.gz",
     #    path="./signal-cli.tar.gz",
-    #)
-    #with console.status("[bold green]unzipping..") as status:
+    # )
+    # with console.status("[bold green]unzipping..") as status:
     #    task2 = progress.add_task(
     #        "unzip",
     #    )
@@ -219,7 +245,7 @@ def do_signalcli():
 
 # change this to something generic
 def do_unzip(archive):
-    #archive = "signal-cli.tar.gz"
+    # archive = "signal-cli.tar.gz"
     os.system("tar -xvf {}".format(archive))
 
 
