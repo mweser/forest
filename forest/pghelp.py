@@ -24,20 +24,6 @@ Loop = Optional[asyncio.events.AbstractEventLoop]
 
 AUTOCREATE = "true" in os.getenv("AUTOCREATE_TABLES", "false").lower()
 MAX_RESP_LOG_LEN = int(os.getenv("MAX_RESP_LOG_LEN", "256"))
-LOG_LEVEL_DEBUG = bool(os.getenv("DEBUG", None))
-
-
-def get_logger(name: str) -> logging.Logger:
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG if LOG_LEVEL_DEBUG else logging.INFO)
-    if not logger.hasHandlers():
-        sh = logging.StreamHandler()
-        sh.setFormatter(
-            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        )
-        logger.addHandler(sh)
-    return logger
-
 
 # this should be used for every insance
 pool: Optional[asyncpg.Pool] = None
@@ -73,17 +59,16 @@ class SimpleInterface:
 class PGExpressions(dict):
     def __init__(self, table: str = "", **kwargs: str) -> None:
         self.table = table
-        self.logger = get_logger(f"{self.table}_expressions")
         super().__init__(**kwargs)
         if "exists" not in self:
             self[
                 "exists"
             ] = f"SELECT * FROM pg_tables WHERE tablename = '{self.table}';"
         if "create_table" not in self:
-            self.logger.warning(f"'create_table' not defined for {self.table}")
+            logging.warning(f"'create_table' not defined for {self.table}")
 
     def get_query(self, key: str) -> str:
-        self.logger.debug(f"self.get invoked for {key}")
+        # logging.debug(f"self.get invoked for {key}")
         return dict.__getitem__(self, key).replace("{self.table}", self.table)
 
 
@@ -110,30 +95,28 @@ class PGInterface:
         self.pool = pool
         if isinstance(database, dict):
             self.invocations: list[dict] = []
-        self.logger = get_logger(
-            f'{self.table}{"_fake" if not self.pool else ""}_interface'
-        )
 
     def finish_init(self) -> None:
         """Optionally triggers creating tables and checks existence."""
         if not self.pool:
-            self.logger.warning("RUNNING IN FAKE MODE")
+            logging.warning("RUNNING IN FAKE MODE")
         if self.pool and self.table and not self.sync_exists():
             if AUTOCREATE:
                 self.sync_create_table()
-                self.logger.warning(f"building table {self.table}")
+                logging.warning(f"building table {self.table}")
             else:
-                self.logger.warning(
+                logging.warning(
                     f"not autocreating! table: {self.table} does not exist!"
                 )
         for k in self.queries:
             if AUTOCREATE and "create" in k and "index" in k:
-                self.logger.info(f"creating index via {k}")
+                logging.info(f"creating index via {k}")
                 self.__getattribute__(f"sync_{k}")()
 
     async def connect_pg(self) -> None:
         global pool
         if not pool:
+            logging.info("creating pool")
             pool = await asyncpg.create_pool(self.database)
         self.pool = pool
 
@@ -189,7 +172,7 @@ class PGInterface:
         return ret
 
     def sync_close(self) -> Any:
-        self.logger.info(f"closing connection: {self.pool}")
+        logging.info(f"closing connection: {self.pool}")
         if self.pool:
             ret = self.loop.run_until_complete(self.pool.close())
             return ret
@@ -237,7 +220,7 @@ class PGInterface:
                 else:
                     resp = canned_response
                 short_strresp = self.truncate(f"{resp}")
-                self.logger.info(
+                logging.info(
                     f"returning `{short_strresp}` for expression: "
                     f"`{qstring}` eval'd with `{args}` & `{kwargs}`"
                 )
@@ -260,9 +243,7 @@ class PGInterface:
                 resp = executer(rebuilt_statement, *args)
                 short_strresp = self.truncate(f"{resp}")
                 short_args = self.truncate(str(args))
-                self.logger.debug(
-                    f"{rebuilt_statement} {short_args} -> {short_strresp}"
-                )
+                # logging.debug(f"{rebuilt_statement} {short_args} -> {short_strresp}")
                 elapsed = f"{time.time() - start_time:.4f}s"  # round to miliseconds
                 logging.info(
                     "query %s took %s", self.truncate(rebuilt_statement), elapsed
