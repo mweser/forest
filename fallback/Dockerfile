@@ -20,4 +20,4 @@ COPY --from=signal /usr/bin/signal-cli /signal-version /app/
 COPY --from=signal /lib/x86_64-linux-gnu/libz.so.1 /lib64/
 COPY --from=libbuilder /app/venv/lib/python3.9/site-packages /app/
 COPY  ./fallback.py ./phrases.txt /app/ 
-ENTRYPOINT ["/usr/bin/python3.9", "/app/contactbot.py"]
+ENTRYPOINT ["/usr/bin/python3.9", "/app/fallback.py"]
