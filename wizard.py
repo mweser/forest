@@ -57,7 +57,7 @@ tasks = [f"task {n}" for n in range(1, 11)]
 
 console.print(tree, style=style)
 
-
+# the menus need to be reorganized
 def main():
     menu = inquirer.select(
         message="Welcome to the forest setup wizard.",
@@ -175,19 +175,6 @@ class Sys:
 
     def do_deps():
         os.system("sh setup.sh")
-
-    # task1 = progress.add_task("Downloading...")
-    # v = "0.10.3"
-    # DownLoader.copy_url(
-    #    task1,
-    #    url=f"https://github.com/AsamK/signal-cli/releases/download/v{v}/signal-cli-{v}-Linux.tar.gz",
-    #    path="./signal-cli.tar.gz",
-    # )
-    # with console.status("[bold green]unzipping..") as status:
-    #    task2 = progress.add_task(
-    #        "unzip",
-    #    )
-    #    do_unzip_signal(archive="signal-cli.tar.gz")
 
 
 class Utils:
