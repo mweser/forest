@@ -7,3 +7,4 @@ auxin-cli
 data
 *log
 .idea
+*.lock

@@ -3,16 +3,8 @@ RUN signal-cli --version | tee /signal-version
 RUN mv /usr/bin/signal-cli-native /usr/bin/signal-cli
 
 FROM python:3.9 as libbuilder
-# WORKDIR /app
-# RUN pip install poetry
-# RUN python3.9 -m venv --without-pip /app/venv 
-# COPY ./pyproject.toml ./poetry.lock /app/
-# RUN VIRTUAL_ENV=/app/venv poetry install 
-
 WORKDIR /app
-
 COPY requirements.txt ./
-
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --user -r requirements.txt
 
