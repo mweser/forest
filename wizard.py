@@ -47,7 +47,7 @@ progress = Progress(
 )
 
 # to do:
-# classes 
+# classes
 # prune dependencies, make things less verbose
 # make stubs do something
 
@@ -71,7 +71,9 @@ def main():
         message="Welcome to the forest setup wizard.",
         choices=[
             Choice(value=FullerService.deploy, name="deploy.sh"),
-            Choice(value=FullerService.deploy_fly_service, name="Deploy Full Service"), #to be moved 
+            Choice(
+                value=FullerService.deploy_fly_service, name="Deploy Full Service"
+            ),  # to be moved
             Choice(value=settings, name="Get Started / Change Settings"),
             Choice(value=do_docs, name="Read documentation"),
             Choice(value=do_update, name="Update from Git"),
@@ -80,7 +82,6 @@ def main():
         default=None,
     ).execute()
     menu()
-
 
 
 def settings():
@@ -127,38 +128,36 @@ def do_auxin():
 
     auxins()
 
+class SecretAgent:
+    def parse_secrets(secrets: str) -> dict[str, str]:
+        pairs = [
+            line.strip().split("=", 1)
+            for line in secrets.split("\n")
+            if line and not line.startswith("#")
+        ]
+        can_be_a_dict = cast(list[tuple[str, str]], pairs)
+        return dict(can_be_a_dict)
 
 
-
-def parse_secrets(secrets: str) -> dict[str, str]:
-    pairs = [
-        line.strip().split("=", 1)
-        for line in secrets.split("\n")
-        if line and not line.startswith("#")
-    ]
-    can_be_a_dict = cast(list[tuple[str, str]], pairs)
-    return dict(can_be_a_dict)
-
-
-def change_secrets(new_values: dict[str, str], **kwargs: str) -> None:
-    env = os.environ.get("ENV", "dev")
-    secrets = parse_secrets(open(f"{env}_secrets").read())
-    # py3.9 introduced dict unions
-    changed = secrets | new_values | kwargs
-    open(f"{env}_secrets", "w+").write(
-        "\n".join(f"{k}={v}" for k, v in changed.items())
-    )
+    def change_secrets(new_values: dict[str, str], **kwargs: str) -> None:
+        env = os.environ.get("ENV", "dev")
+        secrets = SecretAgent.parse_secrets(open(f"{env}_secrets").read())
+        # py3.9 introduced dict unions
+        changed = secrets | new_values | kwargs
+        open(f"{env}_secrets", "w+").write(
+            "\n".join(f"{k}={v}" for k, v in changed.items())
+        )
 
 
 def do_number():
     NUMBER = Prompt.ask(
         "Please enter your bot's phone number in international format, e.x: +19991238458"
     )
-    change_secrets({"BOT_NUMBER": NUMBER})
+    SecretAgent.change_secrets({"BOT_NUMBER": NUMBER})
 
 
 def set_admin() -> None:
-    change_secrets(
+    SecretAgent.change_secrets(
         {
             "ADMIN": Prompt.ask(
                 "Please enter your phone number in international format, e.x: +19991238458"
@@ -182,47 +181,12 @@ def get_rust():
     )
 
 
-def fetch_auxin():
-    # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
-    task1 = progress.add_task("Downloading...")
-    v = "0.10.3"
-    DownLoader.copy_url(
-        task1,
-        url=f"https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip",
-        path="./auxin.zip",
-    )
-    with console.status("[bold green]unzipping..") as status:
-        task2 = progress.add_task(
-            "unzip",
-        )
-        do_unzip(archive="auxin.zip")
 
-    # os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
-    # os.system("rustup default nightly")
-
-
-def fetch_captcha():
-    # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
-    progress.add_task("Downloading captcha helper")
-    DownLoader.copy_url(
-        task1,
-        url=f"https://gitlab.com/api/v4/projects/27947268/jobs/artifacts/main/raw/signal-captcha-helper?job=build%3Aamd64",
-        path="./signal-captcha",
-    )
-    subprocess.run(
-        "chmod +x signal-captcha",
-        shell=True,
-    )
-    captcha = subprocess.run("./signal-captcha", capture_output=True)
-    # redirect to forest contact, prompt for a number, register
-    # prompt for code/redirect to forest contact, verify, upload upload
-    # see https://github.com/forestcontact/go_ham/blob/main/register.py
-    # though most of that is replaced by redirecting to forest contact
 
 
 def switch_auxin():
     if Confirm.ask("Would you like to switch to Auxin?"):
-        change_secrets({"SIGNAL": "auxin"})
+        SecretAgent.change_secrets({"SIGNAL": "auxin"})
 
 
 def do_update():
@@ -231,9 +195,10 @@ def do_update():
             return os.system("git pull")
 
 
-def do_signalcli():
+def do_secret_signalcli():
     if Confirm.ask("Would you like to switch to Signal-CLI?"):
-        change_secrets({"SIGNAL": "signal-cli"})
+        SecretAgent.change_secrets({"SIGNAL": "signal-cli"})
+
     # task1 = progress.add_task("Downloading...")
     # v = "0.10.3"
     # DownLoader.copy_url(
@@ -248,10 +213,27 @@ def do_signalcli():
     #    do_unzip_signal(archive="signal-cli.tar.gz")
 
 
-# change this to something generic
-def do_unzip(archive):
-    # archive = "signal-cli.tar.gz"
-    os.system("tar -xvf {}".format(archive))
+class Utils:
+    def do_unzip(archive):
+        os.system("tar -xvf {}".format(archive))
+
+    def fetch_captcha():
+        # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
+        progress.add_task("Downloading captcha helper")
+        DownLoader.copy_url(
+            task1,
+            url=f"https://gitlab.com/api/v4/projects/27947268/jobs/artifacts/main/raw/signal-captcha-helper?job=build%3Aamd64",
+            path="./signal-captcha",
+        )
+        subprocess.run(
+            "chmod +x signal-captcha",
+            shell=True,
+        )
+        captcha = subprocess.run("./signal-captcha", capture_output=True)
+        # redirect to forest contact, prompt for a number, register
+        # prompt for code/redirect to forest contact, verify, upload upload
+        # see https://github.com/forestcontact/go_ham/blob/main/register.py
+        # though most of that is replaced by redirecting to forest contact
 
 
 def do_newbot():
@@ -264,10 +246,10 @@ def do_newbot():
     print(newbot())
 
 
-# make this generic
-def do_hellobot():
-    shutil.copyfile("./sample_bots/hellobot.py", "bot.py")
-    return "Okay, your brand new bot template is in your Forest directory!"
+class Templates:
+    def do_hellobot():
+        shutil.copyfile("./sample_bots/hellobot.py", "bot.py")
+        return "Okay, your brand new bot template is in your Forest directory!"
 
 
 # why
@@ -300,7 +282,26 @@ class FullerService:
 
 # maybe put these in a class
 
+
 class DownLoader:
+    def fetch_auxin():
+        # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
+        task1 = progress.add_task("Downloading...")
+        v = "0.10.3"
+        DownLoader.copy_url(
+            task1,
+            url=f"https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip",
+            path="./auxin.zip",
+        )
+        with console.status("[bold green]unzipping..") as status:
+            task2 = progress.add_task(
+                "unzip",
+            )
+            do_unzip(archive="auxin.zip")
+
+        # os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
+        # os.system("rustup default nightly")
+    
     def copy_url(task_id: 1, url: str, path: str) -> None:
         progress.console.log(f"Requesting {url}")
         response = urlopen(url)
@@ -315,14 +316,15 @@ class DownLoader:
                     return
         progress.console.log(f"Downloaded {path}")
 
-
     def download(urls: Iterable[str], dest_dir: str):
         with progress:
             with ThreadPoolExecutor(max_workers=4) as pool:
                 for url in urls:
                     filename = url.split("/")[-1]
                     dest_path = os.path.join(dest_dir, filename)
-                    task_id = progress.add_task("download", filename=filename, start=False)
+                    task_id = progress.add_task(
+                        "download", filename=filename, start=False
+                    )
                     pool.submit(DownLoader.copy_url, task_id, url, dest_path)
 
 
