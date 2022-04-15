@@ -52,31 +52,25 @@ progress = Progress(
 # make stubs do something
 
 
-# change this to opening from another file
 tree = open("tree").read()
-# prep opening the readme
 rdme = open("README.md").read()
 
-# make rich happy
+#rich 
 style = "green"
 console = Console()
 tasks = [f"task {n}" for n in range(1, 11)]
 
-# print art
 console.print(tree, style=style)
 
-# maybe i could reference something more portable to make changing menus around easier
 def main():
     menu = inquirer.select(
         message="Welcome to the forest setup wizard.",
         choices=[
             Choice(value=FullerService.deploy, name="deploy.sh"),
-            Choice(
-                value=FullerService.deploy_fly_service, name="Deploy Full Service"
-            ),  # to be moved
+            Choice(value=FullerService.deploy_fly_service, name="Deploy Full Service"),  # to be moved
             Choice(value=settings, name="Get Started / Change Settings"),
-            Choice(value=do_docs, name="Read documentation"),
-            Choice(value=do_update, name="Update from Git"),
+            Choice(value=Utils.do_docs, name="Read documentation"),
+            Choice(value=Sys.do_update, name="Update from Git"),
             Choice(value=do_exit, name="Exit"),
         ],
         default=None,
@@ -88,26 +82,16 @@ def settings():
     pref = inquirer.select(
         message="What would you like to do?",
         choices=[
-            Choice(value=do_newbot, name="Start a new bot from a template"),
-            Choice(value=do_number, name="Set bot number"),
-            Choice(value=set_admin, name="Set admin number"),
+            Choice(value=Templates.do_newbot, name="Start a new bot from a template"),
+            Choice(value=SecretAgent.do_number, name="Set bot number"),
+            Choice(value=SecretAgent.set_admin, name="Set admin number"),
             Choice(value=do_auxin, name="Switch to Auxin"),
-            Choice(value=do_signalcli, name="Switch to Signal-Cli"),
-            Choice(value=do_deps, name="Install / Check Dependencies"),
+            Choice(value=SecretAgent.do_signalcli, name="Switch to Signal-Cli"),
+            Choice(value=Utils.do_deps, name="Install / Check Dependencies"),
         ],
         default=None,
     ).execute()
     pref()
-
-
-def do_docs():
-    md = Markdown(rdme)
-    console.print(md)
-    hint = Text()
-    hint.append(
-        "\nScroll up to read from the beginning!", style="bold green"
-    )  # probably a better solution then this?
-    console.print(hint)
 
 
 def do_auxin():
@@ -127,6 +111,8 @@ def do_auxin():
     ).execute()
 
     auxins()
+
+
 
 class SecretAgent:
     def parse_secrets(secrets: str) -> dict[str, str]:
@@ -169,31 +155,38 @@ class SecretAgent:
         if Confirm.ask("Would you like to switch to Auxin?"):
             SecretAgent.change_secrets({"SIGNAL": "auxin"})
 
-
-def do_rust():
-    with console.status("[bold green]Setting up rust 'sh rust.sh'...") as status:
-        while tasks:
-            task = tasks.pop(0)
-            get_rust()
-            os.system("sh rust.sh")
+    def do_secret_signalcli():
+        if Confirm.ask("Would you like to switch to Signal-CLI?"):
+            SecretAgent.change_secrets({"SIGNAL": "signal-cli"})
 
 
-def get_rust():
-    return subprocess.run(
-        "curl -o rust.sh --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs",
-        shell=True,
-    )
 
 
-def do_update():
-    with console.status("[bold green]git pull") as status:
-        while tasks:
-            return os.system("git pull")
+class Sys:
+    def do_rust():
+        with console.status("[bold green]Setting up rust 'sh rust.sh'...") as status:
+            while tasks:
+                task = tasks.pop(0)
+                get_rust()
+                os.system("sh rust.sh")
 
 
-def do_secret_signalcli():
-    if Confirm.ask("Would you like to switch to Signal-CLI?"):
-        SecretAgent.change_secrets({"SIGNAL": "signal-cli"})
+    def get_rust():
+        return subprocess.run(
+            "curl -o rust.sh --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs",
+            shell=True,
+        )
+
+
+    def do_update():
+        with console.status("[bold green]git pull") as status:
+            while tasks:
+                return os.system("git pull")
+
+    def do_deps():
+        os.system("sh setup.sh")
+
+
 
     # task1 = progress.add_task("Downloading...")
     # v = "0.10.3"
@@ -210,6 +203,15 @@ def do_secret_signalcli():
 
 
 class Utils:
+    def do_docs():
+        md = Markdown(rdme)
+        console.print(md)
+        hint = Text()
+        hint.append(
+            "\nScroll up to read from the beginning!", style="bold green"
+        )  # probably a better solution then this?
+        console.print(hint)
+
     def do_unzip(archive):
         os.system("tar -xvf {}".format(archive))
 
@@ -232,14 +234,6 @@ class Utils:
         # though most of that is replaced by redirecting to forest contact
 
 
-def do_newbot():
-    newbot = inquirer.select(
-        message="What template would you like to start with?",
-        choices=[
-            Choice(value=do_hellobot, name="HelloBot"),
-        ],
-    ).execute()
-    print(newbot())
 
 
 class Templates:
@@ -247,10 +241,14 @@ class Templates:
         shutil.copyfile("./sample_bots/hellobot.py", "bot.py")
         return "Okay, your brand new bot template is in your Forest directory!"
 
-
-# why
-def do_deps():
-    os.system("sh setup.sh")
+    def do_newbot():
+        newbot = inquirer.select(
+            message="What template would you like to start with?",
+            choices=[
+                Choice(value=Templates.do_hellobot, name="HelloBot"),
+            ],
+        ).execute()
+        print(newbot())
 
 
 def do_exit():
@@ -274,10 +272,6 @@ class FullerService:
 
     def deploy_fly_service():
         os.system("./fullerservice/create_app.sh")
-
-
-# maybe put these in a class
-
 
 class DownLoader:
     def fetch_auxin():
