@@ -149,21 +149,25 @@ class SecretAgent:
         )
 
 
-def do_number():
-    NUMBER = Prompt.ask(
-        "Please enter your bot's phone number in international format, e.x: +19991238458"
-    )
-    SecretAgent.change_secrets({"BOT_NUMBER": NUMBER})
+    def do_number():
+        NUMBER = Prompt.ask(
+            "Please enter your bot's phone number in international format, e.x: +19991238458"
+        )
+        SecretAgent.change_secrets({"BOT_NUMBER": NUMBER})
 
 
-def set_admin() -> None:
-    SecretAgent.change_secrets(
-        {
-            "ADMIN": Prompt.ask(
-                "Please enter your phone number in international format, e.x: +19991238458"
-            )
-        }
-    )
+    def set_admin() -> None:
+        SecretAgent.change_secrets(
+            {
+                "ADMIN": Prompt.ask(
+                    "Please enter your phone number in international format, e.x: +19991238458"
+                )
+            }
+        )
+
+    def switch_auxin():
+        if Confirm.ask("Would you like to switch to Auxin?"):
+            SecretAgent.change_secrets({"SIGNAL": "auxin"})
 
 
 def do_rust():
@@ -179,14 +183,6 @@ def get_rust():
         "curl -o rust.sh --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs",
         shell=True,
     )
-
-
-
-
-
-def switch_auxin():
-    if Confirm.ask("Would you like to switch to Auxin?"):
-        SecretAgent.change_secrets({"SIGNAL": "auxin"})
 
 
 def do_update():
@@ -297,7 +293,7 @@ class DownLoader:
             task2 = progress.add_task(
                 "unzip",
             )
-            do_unzip(archive="auxin.zip")
+            Utils.do_unzip(archive="auxin.zip")
 
         # os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
         # os.system("rustup default nightly")
