@@ -70,6 +70,7 @@ def main():
     menu = inquirer.select(
         message="Welcome to the forest setup wizard.",
         choices=[
+            Choice(value=FullerService.deploy, name="deploy.sh"),
             Choice(value=FullerService.deploy_fly_service, name="Deploy Full Service"), #to be moved 
             Choice(value=settings, name="Get Started / Change Settings"),
             Choice(value=do_docs, name="Read documentation"),
@@ -185,7 +186,7 @@ def fetch_auxin():
     # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
     task1 = progress.add_task("Downloading...")
     v = "0.10.3"
-    copy_url(
+    DownLoader.copy_url(
         task1,
         url=f"https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip",
         path="./auxin.zip",
@@ -203,7 +204,7 @@ def fetch_auxin():
 def fetch_captcha():
     # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
     progress.add_task("Downloading captcha helper")
-    copy_url(
+    DownLoader.copy_url(
         task1,
         url=f"https://gitlab.com/api/v4/projects/27947268/jobs/artifacts/main/raw/signal-captcha-helper?job=build%3Aamd64",
         path="./signal-captcha",
@@ -235,7 +236,7 @@ def do_signalcli():
         change_secrets({"SIGNAL": "signal-cli"})
     # task1 = progress.add_task("Downloading...")
     # v = "0.10.3"
-    # copy_url(
+    # DownLoader.copy_url(
     #    task1,
     #    url=f"https://github.com/AsamK/signal-cli/releases/download/v{v}/signal-cli-{v}-Linux.tar.gz",
     #    path="./signal-cli.tar.gz",
@@ -287,6 +288,9 @@ def handle_sigint(signum, frame):
 
 
 class FullerService:
+    def deploy():
+        os.system("deploy.sh")
+
     def test_fs():
         return "test"
 
@@ -295,29 +299,31 @@ class FullerService:
 
 
 # maybe put these in a class
-def copy_url(task_id: 1, url: str, path: str) -> None:
-    progress.console.log(f"Requesting {url}")
-    response = urlopen(url)
-    # This will break if the response doesn't contain content length
-    progress.update(task_id, total=int(response.info()["Content-length"]))
-    with open(path, "wb") as dest_file:
-        progress.start_task(task_id)
-        for data in iter(partial(response.read, 32768), b""):
-            dest_file.write(data)
-            progress.update(task_id, advance=len(data))
-            if done_event.is_set():
-                return
-    progress.console.log(f"Downloaded {path}")
+
+class DownLoader:
+    def copy_url(task_id: 1, url: str, path: str) -> None:
+        progress.console.log(f"Requesting {url}")
+        response = urlopen(url)
+        # This will break if the response doesn't contain content length
+        progress.update(task_id, total=int(response.info()["Content-length"]))
+        with open(path, "wb") as dest_file:
+            progress.start_task(task_id)
+            for data in iter(partial(response.read, 32768), b""):
+                dest_file.write(data)
+                progress.update(task_id, advance=len(data))
+                if done_event.is_set():
+                    return
+        progress.console.log(f"Downloaded {path}")
 
 
-def download(urls: Iterable[str], dest_dir: str):
-    with progress:
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            for url in urls:
-                filename = url.split("/")[-1]
-                dest_path = os.path.join(dest_dir, filename)
-                task_id = progress.add_task("download", filename=filename, start=False)
-                pool.submit(copy_url, task_id, url, dest_path)
+    def download(urls: Iterable[str], dest_dir: str):
+        with progress:
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                for url in urls:
+                    filename = url.split("/")[-1]
+                    dest_path = os.path.join(dest_dir, filename)
+                    task_id = progress.add_task("download", filename=filename, start=False)
+                    pool.submit(DownLoader.copy_url, task_id, url, dest_path)
 
 
 if __name__ == "__main__":
