@@ -220,7 +220,7 @@ class Utils:
     def fetch_captcha():
         # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
         progress.add_task("Downloading captcha helper")
-        DownLoader.copy_url(
+        DownLoader.copy_url( #generic this
             task1,
             url=f"https://gitlab.com/api/v4/projects/27947268/jobs/artifacts/main/raw/signal-captcha-helper?job=build%3Aamd64",
             path="./signal-captcha",
@@ -286,10 +286,10 @@ class FullerService:
 class DownLoader:
     def fetch_auxin():
         # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
-        task1 = progress.add_task("Downloading...")
+        Utils.task1 = progress.add_task("Downloading...")
         v = "0.10.3"
         DownLoader.copy_url(
-            task1,
+            Utils.task1,
             url=f"https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip",
             path="./auxin.zip",
         )
