@@ -46,28 +46,26 @@ progress = Progress(
     TimeRemainingColumn(),
 )
 
-# to do:
-# classes
-# prune dependencies, make things less verbose
-# make stubs do something
-
 
 tree = open("tree").read()
 rdme = open("README.md").read()
 
-#rich 
+# rich
 style = "green"
 console = Console()
 tasks = [f"task {n}" for n in range(1, 11)]
 
 console.print(tree, style=style)
 
+
 def main():
     menu = inquirer.select(
         message="Welcome to the forest setup wizard.",
         choices=[
             Choice(value=FullerService.deploy, name="deploy.sh"),
-            Choice(value=FullerService.deploy_fly_service, name="Deploy Full Service"),  # to be moved
+            Choice(
+                value=FullerService.deploy_fly_service, name="Deploy Full Service"
+            ),  # to be moved
             Choice(value=settings, name="Get Started / Change Settings"),
             Choice(value=Utils.do_docs, name="Read documentation"),
             Choice(value=Sys.do_update, name="Update from Git"),
@@ -113,7 +111,6 @@ def do_auxin():
     auxins()
 
 
-
 class SecretAgent:
     def parse_secrets(secrets: str) -> dict[str, str]:
         pairs = [
@@ -124,7 +121,6 @@ class SecretAgent:
         can_be_a_dict = cast(list[tuple[str, str]], pairs)
         return dict(can_be_a_dict)
 
-
     def change_secrets(new_values: dict[str, str], **kwargs: str) -> None:
         env = os.environ.get("ENV", "dev")
         secrets = SecretAgent.parse_secrets(open(f"{env}_secrets").read())
@@ -134,13 +130,11 @@ class SecretAgent:
             "\n".join(f"{k}={v}" for k, v in changed.items())
         )
 
-
     def do_number():
         NUMBER = Prompt.ask(
             "Please enter your bot's phone number in international format, e.x: +19991238458"
         )
         SecretAgent.change_secrets({"BOT_NUMBER": NUMBER})
-
 
     def set_admin() -> None:
         SecretAgent.change_secrets(
@@ -160,8 +154,6 @@ class SecretAgent:
             SecretAgent.change_secrets({"SIGNAL": "signal-cli"})
 
 
-
-
 class Sys:
     def do_rust():
         with console.status("[bold green]Setting up rust 'sh rust.sh'...") as status:
@@ -170,13 +162,11 @@ class Sys:
                 get_rust()
                 os.system("sh rust.sh")
 
-
     def get_rust():
         return subprocess.run(
             "curl -o rust.sh --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs",
             shell=True,
         )
-
 
     def do_update():
         with console.status("[bold green]git pull") as status:
@@ -185,8 +175,6 @@ class Sys:
 
     def do_deps():
         os.system("sh setup.sh")
-
-
 
     # task1 = progress.add_task("Downloading...")
     # v = "0.10.3"
@@ -218,7 +206,7 @@ class Utils:
     def fetch_captcha():
         # https://nightly.link/mobilecoinofficial/auxin/workflows/actions/main/auxin-cli.zip
         progress.add_task("Downloading captcha helper")
-        DownLoader.copy_url( #generic this
+        DownLoader.copy_url(  # generic this
             task1,
             url=f"https://gitlab.com/api/v4/projects/27947268/jobs/artifacts/main/raw/signal-captcha-helper?job=build%3Aamd64",
             path="./signal-captcha",
@@ -232,8 +220,6 @@ class Utils:
         # prompt for code/redirect to forest contact, verify, upload upload
         # see https://github.com/forestcontact/go_ham/blob/main/register.py
         # though most of that is replaced by redirecting to forest contact
-
-
 
 
 class Templates:
@@ -251,18 +237,6 @@ class Templates:
         print(newbot())
 
 
-def do_exit():
-    exit()
-
-
-# what needs this?
-done_event = Event()
-
-
-def handle_sigint(signum, frame):
-    done_event.set()
-
-
 class FullerService:
     def deploy():
         os.system("deploy.sh")
@@ -272,6 +246,7 @@ class FullerService:
 
     def deploy_fly_service():
         os.system("./fullerservice/create_app.sh")
+
 
 class DownLoader:
     def fetch_auxin():
@@ -289,9 +264,6 @@ class DownLoader:
             )
             Utils.do_unzip(archive="auxin.zip")
 
-        # os.system("git clone https://github.com/mobilecoinofficial/auxin.git")
-        # os.system("rustup default nightly")
-    
     def copy_url(task_id: 1, url: str, path: str) -> None:
         progress.console.log(f"Requesting {url}")
         response = urlopen(url)
@@ -316,6 +288,17 @@ class DownLoader:
                         "download", filename=filename, start=False
                     )
                     pool.submit(DownLoader.copy_url, task_id, url, dest_path)
+
+
+def do_exit():
+    exit()
+
+
+done_event = Event()
+
+
+def handle_sigint(signum, frame):
+    done_event.set()
 
 
 if __name__ == "__main__":
