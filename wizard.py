@@ -47,7 +47,7 @@ progress = Progress(
 )
 
 # to do:
-# organize functions, dear god can i get some classes?
+# classes 
 # prune dependencies, make things less verbose
 # make stubs do something
 
@@ -70,6 +70,7 @@ def main():
     menu = inquirer.select(
         message="Welcome to the forest setup wizard.",
         choices=[
+            Choice(value=FullerService.deploy_fly_service, name="Deploy Full Service"), #to be moved 
             Choice(value=settings, name="Get Started / Change Settings"),
             Choice(value=do_docs, name="Read documentation"),
             Choice(value=do_update, name="Update from Git"),
@@ -78,6 +79,7 @@ def main():
         default=None,
     ).execute()
     menu()
+
 
 
 def settings():
@@ -123,6 +125,8 @@ def do_auxin():
     ).execute()
 
     auxins()
+
+
 
 
 def parse_secrets(secrets: str) -> dict[str, str]:
@@ -280,6 +284,14 @@ done_event = Event()
 
 def handle_sigint(signum, frame):
     done_event.set()
+
+
+class FullerService:
+    def test_fs():
+        return "test"
+
+    def deploy_fly_service():
+        os.system("./fullerservice/create_app.sh")
 
 
 # maybe put these in a class
