@@ -14,6 +14,7 @@ from time import sleep
 from tkinter import W
 from typing import Iterable, cast
 from urllib.request import urlopen
+from os.path import exists
 
 import rich
 from InquirerPy import base, inquirer, prompt, prompt_async, validator
@@ -32,7 +33,6 @@ from rich.progress import (
 )
 from rich.prompt import Prompt, Confirm
 from rich.text import Text
-
 
 progress = Progress(
     TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
@@ -91,18 +91,17 @@ def settings():
     ).execute()
     pref()
 
-
-def do_auxin():
+def do_auxin(): # This should be smarter and not need to ask the user. 
     auxins = inquirer.select(
         message="Do you have auxin already?",
         choices=[
             Choice(
-                value=fetch_auxin,
+                value=DownLoader.fetch_auxin,
                 name="Download and set up Auxin",
                 enabled=True,
             ),
             Choice(
-                value=switch_auxin,
+                value=SecretAgent.switch_auxin,
                 name="I have auxin, just change the parameter in 'dev_secrets'",
             ),
         ],
@@ -155,7 +154,7 @@ class SecretAgent:
 
 
 class Sys:
-    def do_rust():
+    def do_rust(): # Rust set up isn't necessarily needed since we can fetch binaries now. 
         with console.status("[bold green]Setting up rust 'sh rust.sh'...") as status:
             while tasks:
                 task = tasks.pop(0)
@@ -208,6 +207,13 @@ class Utils:
         # see https://github.com/forestcontact/go_ham/blob/main/register.py
         # though most of that is replaced by redirecting to forest contact
 
+class AuxinRegister:
+    def do_register():
+        return "Hello! I am a friendly stub."
+
+    def do_verify():
+        return "Hello! I am a friendly stub."
+    
 
 class Templates:
     def do_hellobot():
@@ -228,7 +234,7 @@ class FullerService:
     def deploy():
         os.system("deploy.sh")
 
-    def test_fs():
+    def test_fs(): 
         return "test"
 
     def deploy_fly_service():
