@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "semantic_search"
+version = "0.1.0"
+description = ""
+authors = ["deepfates <deepfates@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aiohttp = "^3.8.1"
+acrossword = {git = "https://github.com/deepfates/acrossword"}
+
+[tool.poetry.dev-dependencies]
+ipython = "^8.2.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
