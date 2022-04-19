@@ -1,6 +1,6 @@
-# fly.toml file generated for fallback on 2022-04-19T09:14:34-06:00
+# fly.toml file generated for semantic-search on 2022-04-19T10:59:55-06:00
 
-app = "fallback"
+app = "semantic-search"
 
 kill_signal = "SIGINT"
 kill_timeout = 5
