@@ -28,6 +28,7 @@ from asyncio import Queue, StreamReader, StreamWriter
 from asyncio.subprocess import PIPE
 from decimal import Decimal
 from functools import wraps
+from pathlib import Path
 from textwrap import dedent
 from typing import (
     Any,
@@ -56,6 +57,11 @@ from forest import autosave, datastore, payments_monitor, pghelp, string_dist, u
 from forest.cryptography import hash_salt
 from forest.message import AuxinMessage, Message, Reaction, StdioMessage
 
+try:
+    import captcha
+except ImportError:
+    captcha = None  # type: ignore
+
 JSON = dict[str, Any]
 Response = Union[str, list, dict[str, str], None]
 AsyncFunc = Callable[..., Awaitable]
@@ -66,11 +72,7 @@ roundtrip_summary = Summary("roundtrip_s", "Roundtrip message response time")
 
 MessageParser = AuxinMessage if utils.AUXIN else StdioMessage
 logging.info("Using message parser: %s", MessageParser)
-fee_pmob = int(1e12 * 0.0004)
-try:
-    import captcha
-except ImportError:
-    captcha = None  # type: ignore
+FEE_PMOB = int(1e12 * 0.0004)
 
 
 def rpc(
@@ -82,6 +84,29 @@ def rpc(
         "id": _id,
         "params": (param_dict or {}) | params,
     }
+
+
+async def get_attachment_paths(message: Message) -> list[str]:
+    if not utils.AUXIN:
+        return [
+            str(Path("./attachments") / attachment["id"])
+            for attachment in message.attachments
+        ]
+    attachments = []
+    for attachment_info in message.attachments:
+        attachment_name = attachment_info.get("fileName")
+        timestamp = attachment_info.get("uploadTimestamp")
+        for i in range(30):  # wait up to 3s
+            if attachment_name is None:
+                maybe_paths = glob.glob(f"/tmp/unnamed_attachment_{timestamp}.*")
+                attachment_path = maybe_paths[0] if maybe_paths else ""
+            else:
+                attachment_path = f"/tmp/{attachment_name}"
+            if attachment_path and Path(attachment_path).exists():
+                attachments.append(attachment_path)
+                break
+            await asyncio.sleep(0.1)
+    return attachments
 
 
 ActivityQueries = pghelp.PGExpressions(
@@ -365,6 +390,7 @@ class Signal:
         family_name: Optional[str] = "",
         payment_address: Optional[str] = "",
         profile_path: Optional[str] = None,
+        **kwargs: Optional[str],
     ) -> str:
         """set given and family name, payment address (must be b64 format),
         and profile picture"""
@@ -375,6 +401,9 @@ class Signal:
             params["mobilecoinAddress"] = payment_address
         if profile_path:
             params["avatarFile"] = profile_path
+        for parameter, value in kwargs.items():
+            if value:
+                params[parameter] = value
         rpc_id = f"setProfile-{get_uid()}"
         await self.outbox.put(rpc("setProfile", params, rpc_id))
         return rpc_id
@@ -1052,6 +1081,17 @@ class PayBot(ExtrasBot):
         return "/fsr [command] ([arg1] [val1]( [arg2] [val2])...)"
 
     @requires_admin
+    async def do_setup(self, _: Message) -> str:
+        if not utils.AUXIN:
+            return "Can't set payment address without auxin"
+        await self.set_profile_auxin(
+            mobilecoin_address=mc_util.b58_wrapper_to_b64_public_address(
+                await self.mobster.ensure_address()
+            )
+        )
+        return "OK"
+
+    @requires_admin
     async def do_balance(self, _: Message) -> Response:
         """Returns bot balance in MOB."""
         return f"Bot has balance of {mc_util.pmob2mob(await self.mobster.get_balance()).quantize(Decimal('1.0000'))} MOB"
@@ -1091,10 +1131,6 @@ class PayBot(ExtrasBot):
             amount_pmob,
             message.payment.get("note"),
         )
-        await self.respond(
-            message,
-            f"Thank you for sending {float(amount_mob)} MOB ({amount_usd_cents / 100} USD)",
-        )
         await self.respond(message, await self.payment_response(message, amount_pmob))
 
     async def payment_response(self, msg: Message, amount_pmob: int) -> Response:
@@ -1125,19 +1161,9 @@ class PayBot(ExtrasBot):
 
     @requires_admin
     async def do_set_profile(self, message: Message) -> Response:
-        """Renames bot (requires admin) - accepts first name, last name, and address."""
-        user_image = None
-        if message.attachments and len(message.attachments):
-            await asyncio.sleep(2)
-            attachment_info = message.attachments[0]
-            attachment_path = attachment_info.get("fileName")
-            timestamp = attachment_info.get("uploadTimestamp")
-            if attachment_path is None:
-                attachment_paths = glob.glob(f"/tmp/unnamed_attachment_{timestamp}.*")
-                if attachment_paths:
-                    user_image = attachment_paths.pop()
-            else:
-                user_image = f"/tmp/{attachment_path}"
+        """Renames bot (requires admin) - accepts first name, last name, and payment address."""
+        attachments = await get_attachment_paths(message)
+        user_image = attachments[0] if attachments else None
         if user_image or (message.tokens and len(message.tokens) > 0):
             await self.set_profile_auxin(
                 given_name=message.arg1,
@@ -1183,7 +1209,7 @@ class PayBot(ExtrasBot):
             "build_gift_code",
             account_id=await self.mobster.get_account(),
             value_pmob=str(int(amount_pmob)),
-            fee=str(fee_pmob),
+            fee=str(FEE_PMOB),
             memo="Gift code built with MOBot!",
         )
         prop = raw_prop["result"]["tx_proposal"]
@@ -1198,7 +1224,7 @@ class PayBot(ExtrasBot):
         return [
             "Built Gift Code",
             b58,
-            f"redeemable for {str(mc_util.pmob2mob(amount_pmob - fee_pmob)).rstrip('0')} MOB",
+            f"redeemable for {str(mc_util.pmob2mob(amount_pmob - FEE_PMOB)).rstrip('0')} MOB",
         ]
 
     # FIXME: clarify signature and return details/docs
@@ -1739,6 +1765,24 @@ class QuestionBot(PayBot):
             )
             return await self.do_challenge(msg)
         return "Thanks for helping protect our community!"
+
+    @requires_admin
+    async def do_setup(self, msg: Message) -> str:
+        if not utils.AUXIN:
+            return "Can't set profile without auxin"
+        fields: dict[str, Optional[str]] = {}
+        for field in ["given_name", "family_name", "about", "mood_emoji"]:
+            resp = await self.ask_freeform_question(
+                msg.source, f"value for field {field}?"
+            )
+            if resp and resp.lower() != "none":
+                fields[field] = resp
+        fields["mobilecoin_address"] = await self.mobster.ensure_address()
+        attachments = await get_attachment_paths(msg)
+        if attachments:
+            fields["profile_path"] = attachments[0]
+        await self.set_profile_auxin(**fields)
+        return f"set {', '.join(fields)}"
 
 
 async def no_get(request: web.Request) -> web.Response:
