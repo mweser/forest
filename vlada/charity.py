@@ -51,18 +51,18 @@ class Charity(DialogBot):
 
     async def report(self) -> None:
         report_timestamp = datetime.datetime.utcnow().isoformat()
-        header = "Donation UID, User UID, Timestamp, Amount MOB, Charity, FTXUSDPriceAtTimestamp"
+        header = "Donation UID, User UID, User phone number, Timestamp, Amount MOB, Charity, FTXUSDPriceAtTimestamp"
         body = [
             f"{k}, {v}, {await self.mobster.get_historical_rate(v.split(', ')[1])}"
             for (k, v) in self.donations.dict_.items()
         ]
         report_output = "\n".join([header, "\n"] + body)
-        report_filename = f"/tmp/HotlineDonations_{report_timestamp}.csv"
+        report_filename = f"/tmp/Donations_{report_timestamp}.csv"
         open(report_filename, "w").write(report_output)
         await self.admin("Report Built", attachments=[report_filename])
 
     @requires_admin
-    async def do_report(self) -> None:
+    async def do_report(self, _: Message) -> None:
         """Generate donation report now as opposed to waiting till midnight"""
         await self.report()
 
@@ -131,7 +131,7 @@ class Charity(DialogBot):
         donation_time = time.time()
         code = await self.dialog.get("CHARITY", "CHARITY")
         await self.donations.set(
-            donation_uid, f"{user}, {donation_time}, {amount_mob}, {code}"
+            donation_uid, f"{user}, {msg.source}, {donation_time}, {amount_mob}, {code}"
         )
         await self.charities_balance_mmob.increment(code, amount_mmob)
 
