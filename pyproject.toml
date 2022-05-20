@@ -22,6 +22,7 @@ termcolor = "*"
 ulid2 = "*"
 pycryptodome = "*"
 aiohttp = {extras = ["speedups"], version = "^3.8.1"}
+openai = "^0.18.1"
 
 [tool.poetry.dev-dependencies]
 black = "*"

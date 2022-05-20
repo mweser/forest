@@ -45,11 +45,11 @@ class Lotte(PayBot):
     async def chat(self, msg: Message, fronter: str) -> Response:
         """Organises the conversation and sends responses"""
 
-        prompt = self.bios[fronter].replace("SOURCE", msg.source)
+        prompt = self.bios[fronter]#.replace("SOURCE", msg.source)
         for _, line in self.conversation.items():
             prompt = prompt + "\n" + line
-        prompt = prompt + "\n" + f"{msg.source}: {msg.text} \n{fronter}: "
-        self.conversation[time.time()] = f"{msg.source}: {msg.text}"
+        prompt = prompt + "\n" + f"SOURCE: {msg.full_text} \n{fronter}: "
+        self.conversation[time.time()] = f"SOURCE: {msg.text}"
         result = openai.Completion.create(  # type: ignore
             engine="curie",
             prompt=prompt,
@@ -58,13 +58,13 @@ class Lotte(PayBot):
             top_p=1,
             frequency_penalty=0.01,
             presence_penalty=0.7,
-            stop=["\n", f"{msg.source}:", fronter],
+            stop=["\n", f"SOURCE:", fronter],
         )
         answer = (
             result["choices"][0]["text"]
             .strip()
             .replace("AI:", "\nAI:")
-            .replace(f"{msg.source}:", f"\n{msg.source}:")
+            .replace(f"SOURCE:", f"\nSOURCE:")
         )
 
         # fronter = (
@@ -72,36 +72,40 @@ class Lotte(PayBot):
         # )  # names being properly uppercase might help the prompt
         self.conversation[time.time()] = f"{fronter}: {answer}"
         logging.info("conversation:")
-        for _, line in self.conversation.items():
-            logging.info(line)
+        for timest, line in self.conversation.items():
+            logging.info(f"{str(timest)}: {line}")
+
+        if answer == "":
+            await self.send_message(msg.uuid,"Sorry, I'm confused. Sometimes I forget. Let's start over.")
+            return await self.do_clear(msg)
 
         return answer  # + f"\n and here's the extra:\n {str(len(self.conversation))} \n {self.conversation[len(self.conversation)-1]}"
 
     async def do_rowena(self, msg: Message) -> Response:
         """Chat With Rowena the Faerie"""
-        return await self.chat(msg, "rowena")
+        return await self.chat(msg, "Rowena")
 
     async def do_lotte(self, msg: Message) -> Response:
         """Chat With Lotte the AI"""
-        return await self.chat(msg, "lotte")
+        return await self.chat(msg, "Lotte")
 
-    async def do_switch(self, msg: Message) -> Response:
-        """Switches to a different character to talk to"""
+    # async def do_switch(self, msg: Message) -> Response:
+    #     """Switches to a different character to talk to"""
 
-        if not isinstance(msg.arg1, str):
-            return "You have to specify a name!"
+    #     if not isinstance(msg.arg1, str):
+    #         return "You have to specify a name!"
 
-        requested_fronter = msg.arg1.lower()
+    #     requested_fronter = msg.arg1.lower()
 
-        if requested_fronter in {k.lower() for k in self.bios}:
-            if requested_fronter == self.current_fronter:
-                return "they're already in front"
-            self.current_fronter = requested_fronter
-            return f"{self.current_fronter} is now in front"
+    #     if requested_fronter in {k.lower() for k in self.bios}:
+    #         if requested_fronter == self.current_fronter:
+    #             return "they're already in front"
+    #         self.current_fronter = requested_fronter
+    #         return f"{self.current_fronter} is now in front"
 
-        return "there's no one by that name here"
+    #     return "there's no one by that name here"
 
-    async def do_clear(self) -> Response:
+    async def do_clear(self, _: Message) -> Response:
         """Clear the conversation history"""
         self.conversation = {}
         return "conversation history has been cleared"
