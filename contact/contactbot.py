@@ -12,7 +12,7 @@ import teli as api
 from forest import utils
 from forest.core import Message, QuestionBot, Response, app, requires_admin, run_bot
 from forest_tables import GroupRoutingManager, PaymentsManager, RoutingManager
-
+import forest.pdictng as pdict 
 
 def takes_number(command: Callable) -> Callable:
     @wraps(command)  # keeps original name and docstring for /help
@@ -305,7 +305,12 @@ class Forest(QuestionBot):
                 -mc_util.mob2pmob(self.mob_price * 100),
                 number,
             )
-            return f"You are now the proud owner of {number}"
+            if not await self.ask_yesno_question(msg.source, "Would you like to set a memo for your number?"):
+                    return f"You are now the proud owner of {number}"
+            await self.ask_freeform_question(msg.source, "What would you like to set as a memo?")
+            memo = msg.full_text
+            self.send_message(msg.source, f"Setting memo to {memo}")
+            pdict.aPersistDict.set(msg.source, "memo", {number})       
         return "Database error?"
 
     do_buy = do_order
