@@ -204,13 +204,19 @@ class Forest(QuestionBot):
             return "Thank you for paying! You can now buy a phone number with /order <area code>"
         return f"Thank you for paying! You've overpayed by {diff} MOB. Contact an administrator for a refund"
 
+    async def get_memos(self, msg: Message) -> list[dict]:
+        """Get the memos for a user"""
+        return await pdict.aPersistDict.get(msg.source, key=f"{self.get_user_numbers}")
+
     async def do_status(self, message: Message) -> Union[list[str], str]:
         """List numbers if you have them. Usage: /status"""
         numbers = await self.get_user_numbers(message)
         # should probably note when the numbers expire
         if numbers and len(numbers) == 1:
             # registered, one number
-            return f'Hi {message.name}! We found {numbers[0]} registered for your user. Try "/send {message.source} Hello from Forest Contact via {numbers[0]}!".'
+            #            await pdict.aPersistDict.set(msg.source, "memo", {number})       
+            memo = await self.get_memos()
+            return f'Hi {message.name}! We found {numbers[0]} "{memo}" registered for your user. Try "/send {message.source} Hello from Forest Contact via {numbers[0]}!".'
         # registered, many numbers
         if numbers:
             return f"Hi {message.name}! We found several numbers {numbers} registered for your user. Try '/send {message.source} Hello from Forest Contact via {numbers[0]}!'."
@@ -310,8 +316,8 @@ class Forest(QuestionBot):
             await self.ask_freeform_question(msg.source, "What would you like to set as a memo?")
             memo = msg.full_text
             self.send_message(msg.source, f"Setting memo to {memo}")
-            pdict.aPersistDict.set(msg.source, "memo", {number})       
-        return "Database error?"
+            await pdict.aPersistDict.set(msg.source, "memo", {number})       
+        
 
     do_buy = do_order
 
