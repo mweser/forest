@@ -5,11 +5,37 @@ isort:skip_file
 import builtins
 import google.protobuf.descriptor
 import google.protobuf.internal.containers
+import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
 import typing
 import typing_extensions
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
+DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+
+class _KnownTokenId:
+    ValueType = typing.NewType('ValueType', builtins.int)
+    V: typing_extensions.TypeAlias = ValueType
+class _KnownTokenIdEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_KnownTokenId.ValueType], builtins.type):
+    DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+    MOB: _KnownTokenId.ValueType  # 0
+class KnownTokenId(_KnownTokenId, metaclass=_KnownTokenIdEnumTypeWrapper):
+    """/////////////////////////////////////////////////////////////////////////////
+    `trasaction/core` crate
+    /////////////////////////////////////////////////////////////////////////////
+
+    / A list of "known" token id's and their names.
+    /
+    / Note that this is not an exhaustive list and clients should gracefully handle
+    / the scenario that they receive a tx out with a token id they don't know about yet.
+    /
+    / If changing this, please keep it in sync with the list defined in
+    / mc-transaction-core in the tokens module.
+    """
+    pass
+
+MOB: KnownTokenId.ValueType  # 0
+global___KnownTokenId = KnownTokenId
+
 
 class RistrettoPrivate(google.protobuf.message.Message):
     """/////////////////////////////////////////////////////////////////////////////
@@ -18,71 +44,83 @@ class RistrettoPrivate(google.protobuf.message.Message):
 
     / A Ristretto private key.
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___RistrettoPrivate = RistrettoPrivate
 
 class CompressedRistretto(google.protobuf.message.Message):
     """/ A 32-byte compressed Ristretto curve point (public key)"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___CompressedRistretto = CompressedRistretto
 
 class Ed25519Public(google.protobuf.message.Message):
     """/ An Ed25519 public key, for validating signatures."""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___Ed25519Public = Ed25519Public
 
 class Ed25519Signature(google.protobuf.message.Message):
     """/ An Ed25519 signature object"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___Ed25519Signature = Ed25519Signature
+
+class Ed25519MultiSig(google.protobuf.message.Message):
+    """/////////////////////////////////////////////////////////////////////////////
+    `mc-crypto-multisig` crate
+    /////////////////////////////////////////////////////////////////////////////
+
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    SIGNATURES_FIELD_NUMBER: builtins.int
+    @property
+    def signatures(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Ed25519Signature]: ...
+    def __init__(self,
+        *,
+        signatures: typing.Optional[typing.Iterable[global___Ed25519Signature]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["signatures",b"signatures"]) -> None: ...
+global___Ed25519MultiSig = Ed25519MultiSig
+
+class Ed25519SignerSet(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    SIGNERS_FIELD_NUMBER: builtins.int
+    THRESHOLD_FIELD_NUMBER: builtins.int
+    @property
+    def signers(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Ed25519Public]: ...
+    threshold: builtins.int
+    def __init__(self,
+        *,
+        signers: typing.Optional[typing.Iterable[global___Ed25519Public]] = ...,
+        threshold: builtins.int = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["signers",b"signers","threshold",b"threshold"]) -> None: ...
+global___Ed25519SignerSet = Ed25519SignerSet
 
 class AccountKey(google.protobuf.message.Message):
     """/////////////////////////////////////////////////////////////////////////////
@@ -95,8 +133,7 @@ class AccountKey(google.protobuf.message.Message):
     /
     / This matches the Rust `transaction::AccountKey` struct.
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     VIEW_PRIVATE_KEY_FIELD_NUMBER: builtins.int
     SPEND_PRIVATE_KEY_FIELD_NUMBER: builtins.int
     FOG_REPORT_URL_FIELD_NUMBER: builtins.int
@@ -110,61 +147,37 @@ class AccountKey(google.protobuf.message.Message):
     def spend_private_key(self) -> global___RistrettoPrivate:
         """/ Private key `b` used for spending."""
         pass
-    fog_report_url: typing.Text = ...
+    fog_report_url: typing.Text
     """/ Optional url of fog report server.
     / Empty string when not in use, i.e. for accounts that don't have fog service.
     """
 
-    fog_report_id: typing.Text = ...
+    fog_report_id: typing.Text
     """/ Optional fog report id.
     / The fog report server may serve multiple reports, this id disambiguates
     / which one to use when sending to this account.
     """
 
-    fog_authority_spki: builtins.bytes = ...
+    fog_authority_spki: builtins.bytes
     """/ Optional fog authority subjectPublicKeyInfo.
     / Empty when not in use.
     """
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
         view_private_key: typing.Optional[global___RistrettoPrivate] = ...,
         spend_private_key: typing.Optional[global___RistrettoPrivate] = ...,
         fog_report_url: typing.Text = ...,
         fog_report_id: typing.Text = ...,
         fog_authority_spki: builtins.bytes = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "spend_private_key",
-            b"spend_private_key",
-            "view_private_key",
-            b"view_private_key",
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "fog_authority_spki",
-            b"fog_authority_spki",
-            "fog_report_id",
-            b"fog_report_id",
-            "fog_report_url",
-            b"fog_report_url",
-            "spend_private_key",
-            b"spend_private_key",
-            "view_private_key",
-            b"view_private_key",
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["spend_private_key",b"spend_private_key","view_private_key",b"view_private_key"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["fog_authority_spki",b"fog_authority_spki","fog_report_id",b"fog_report_id","fog_report_url",b"fog_report_url","spend_private_key",b"spend_private_key","view_private_key",b"view_private_key"]) -> None: ...
 global___AccountKey = AccountKey
 
 class PublicAddress(google.protobuf.message.Message):
     """/ A public address, used to identify recipients."""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     VIEW_PUBLIC_KEY_FIELD_NUMBER: builtins.int
     SPEND_PUBLIC_KEY_FIELD_NUMBER: builtins.int
     FOG_REPORT_URL_FIELD_NUMBER: builtins.int
@@ -178,57 +191,34 @@ class PublicAddress(google.protobuf.message.Message):
     def spend_public_key(self) -> global___CompressedRistretto:
         """/ Spend public key"""
         pass
-    fog_report_url: typing.Text = ...
+    fog_report_url: typing.Text
     """/ Optional url of fog report server.
     / Empty string when not in use, i.e. for accounts that don't have fog service.
     / Indicates the place at which the fog report server should be contacted.
     """
 
-    fog_report_id: typing.Text = ...
+    fog_report_id: typing.Text
     """/ Optional fog report id.
     / The fog report server may serve multiple reports, this id disambiguates
     / which one to use when sending to this account.
     """
 
-    fog_authority_sig: builtins.bytes = ...
+    fog_authority_sig: builtins.bytes
     """/ View key signature over the fog authority subjectPublicKeyInfo.
     /
     / This must be parseable as a RistrettoSignature.
     """
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
         view_public_key: typing.Optional[global___CompressedRistretto] = ...,
         spend_public_key: typing.Optional[global___CompressedRistretto] = ...,
         fog_report_url: typing.Text = ...,
         fog_report_id: typing.Text = ...,
         fog_authority_sig: builtins.bytes = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "spend_public_key",
-            b"spend_public_key",
-            "view_public_key",
-            b"view_public_key",
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "fog_authority_sig",
-            b"fog_authority_sig",
-            "fog_report_id",
-            b"fog_report_id",
-            "fog_report_url",
-            b"fog_report_url",
-            "spend_public_key",
-            b"spend_public_key",
-            "view_public_key",
-            b"view_public_key",
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["spend_public_key",b"spend_public_key","view_public_key",b"view_public_key"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["fog_authority_sig",b"fog_authority_sig","fog_report_id",b"fog_report_id","fog_report_url",b"fog_report_url","spend_public_key",b"spend_public_key","view_public_key",b"view_public_key"]) -> None: ...
 global___PublicAddress = PublicAddress
 
 class RootIdentity(google.protobuf.message.Message):
@@ -236,8 +226,7 @@ class RootIdentity(google.protobuf.message.Message):
     / The RootIdentity is a compact form of a user's account key, if it has been
     / derived in this way. This may be useful for e.g. paper wallets.
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     ROOT_ENTROPY_FIELD_NUMBER: builtins.int
     FOG_REPORT_URL_FIELD_NUMBER: builtins.int
     FOG_REPORT_ID_FIELD_NUMBER: builtins.int
@@ -246,240 +235,123 @@ class RootIdentity(google.protobuf.message.Message):
     def root_entropy(self) -> global___RootEntropy:
         """/ The root entropy used to derive cryptonote private keys for this account"""
         pass
-    fog_report_url: typing.Text = ...
+    fog_report_url: typing.Text
     """/ Optional url of fog report server, same as in AccountKey"""
 
-    fog_report_id: typing.Text = ...
+    fog_report_id: typing.Text
     """/ Optional fog report id, same as in AccountKey"""
 
-    fog_authority_spki: builtins.bytes = ...
+    fog_authority_spki: builtins.bytes
     """/ Optional fog authority subjectPublicKeyInfo.
     / Empty when not in use.
     """
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
         root_entropy: typing.Optional[global___RootEntropy] = ...,
         fog_report_url: typing.Text = ...,
         fog_report_id: typing.Text = ...,
         fog_authority_spki: builtins.bytes = ...,
-    ) -> None: ...
-    def HasField(
-        self, field_name: typing_extensions.Literal["root_entropy", b"root_entropy"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "fog_authority_spki",
-            b"fog_authority_spki",
-            "fog_report_id",
-            b"fog_report_id",
-            "fog_report_url",
-            b"fog_report_url",
-            "root_entropy",
-            b"root_entropy",
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["root_entropy",b"root_entropy"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["fog_authority_spki",b"fog_authority_spki","fog_report_id",b"fog_report_id","fog_report_url",b"fog_report_url","root_entropy",b"root_entropy"]) -> None: ...
 global___RootIdentity = RootIdentity
 
 class RootEntropy(google.protobuf.message.Message):
     """/ A 32 byte secret used as input key material to derive private keys"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___RootEntropy = RootEntropy
 
-class ViewKey(google.protobuf.message.Message):
-    """/ A ViewKey is a reduced AccountKey -- it contains the private key necessary to
-    / view your transactions and see the amounts, but not to send new transactions.
-    / This concept is part of Cryptonote.
-    / In Mobilecoin, all public addresses correspond to subaddresses, and often
-    / the "default subaddress" is used.
-    / The ViewKey similarly corresponds to a particular subaddress.
-    """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
-    VIEW_PRIVATE_KEY_FIELD_NUMBER: builtins.int
-    SPEND_PUBLIC_KEY_FIELD_NUMBER: builtins.int
-    @property
-    def view_private_key(self) -> global___RistrettoPrivate:
-        """/ The view-private-key of the account. This enables to check if a transaction
-        / corresponds to this subaddress, and to interact with fog.
-        """
-        pass
-    @property
-    def spend_public_key(self) -> global___CompressedRistretto:
-        """/ The spend public key of the account.
-        / This value also appears in the public address.
-        """
-        pass
-    def __init__(
-        self,
-        *,
-        view_private_key: typing.Optional[global___RistrettoPrivate] = ...,
-        spend_public_key: typing.Optional[global___CompressedRistretto] = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "spend_public_key",
-            b"spend_public_key",
-            "view_private_key",
-            b"view_private_key",
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "spend_public_key",
-            b"spend_public_key",
-            "view_private_key",
-            b"view_private_key",
-        ],
-    ) -> None: ...
-
-global___ViewKey = ViewKey
-
 class CurveScalar(google.protobuf.message.Message):
-    """/////////////////////////////////////////////////////////////////////////////
-    `trasaction/core` crate
-    /////////////////////////////////////////////////////////////////////////////
-
-    / A 32-byte scalar associated to the ristretto group.
+    """/ A 32-byte scalar associated to the ristretto group.
     / This is the same as RistrettoPrivate, but they are used in different places.
     / TODO: MC-1605 Consider to factor out this type, or just this proto message.
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___CurveScalar = CurveScalar
 
 class KeyImage(google.protobuf.message.Message):
     """/ A 32-byte mobilecoin transaction key image."""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___KeyImage = KeyImage
 
 class Range(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     FROM_FIELD_NUMBER: builtins.int
     TO_FIELD_NUMBER: builtins.int
-    to: builtins.int = ...
-    def __init__(
-        self,
+    to: builtins.int
+    def __init__(self,
         *,
         to: builtins.int = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["from", b"from", "to", b"to"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["from",b"from","to",b"to"]) -> None: ...
 global___Range = Range
 
 class TxOutMembershipHash(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___TxOutMembershipHash = TxOutMembershipHash
 
 class TxOutMembershipElement(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     RANGE_FIELD_NUMBER: builtins.int
     HASH_FIELD_NUMBER: builtins.int
     @property
     def range(self) -> global___Range: ...
     @property
     def hash(self) -> global___TxOutMembershipHash: ...
-    def __init__(
-        self,
+    def __init__(self,
         *,
         range: typing.Optional[global___Range] = ...,
         hash: typing.Optional[global___TxOutMembershipHash] = ...,
-    ) -> None: ...
-    def HasField(
-        self, field_name: typing_extensions.Literal["hash", b"hash", "range", b"range"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["hash", b"hash", "range", b"range"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["hash",b"hash","range",b"range"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["hash",b"hash","range",b"range"]) -> None: ...
 global___TxOutMembershipElement = TxOutMembershipElement
 
 class TxOutMembershipProof(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     INDEX_FIELD_NUMBER: builtins.int
     HIGHEST_INDEX_FIELD_NUMBER: builtins.int
     ELEMENTS_FIELD_NUMBER: builtins.int
-    index: builtins.int = ...
-    highest_index: builtins.int = ...
+    index: builtins.int
+    highest_index: builtins.int
     @property
-    def elements(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___TxOutMembershipElement
-    ]: ...
-    def __init__(
-        self,
+    def elements(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TxOutMembershipElement]: ...
+    def __init__(self,
         *,
         index: builtins.int = ...,
         highest_index: builtins.int = ...,
-        elements: typing.Optional[
-            typing.Iterable[global___TxOutMembershipElement]
-        ] = ...,
-    ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "elements",
-            b"elements",
-            "highest_index",
-            b"highest_index",
-            "index",
-            b"index",
-        ],
-    ) -> None: ...
-
+        elements: typing.Optional[typing.Iterable[global___TxOutMembershipElement]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["elements",b"elements","highest_index",b"highest_index","index",b"index"]) -> None: ...
 global___TxOutMembershipProof = TxOutMembershipProof
 
 class TxOutConfirmationNumber(google.protobuf.message.Message):
@@ -489,96 +361,76 @@ class TxOutConfirmationNumber(google.protobuf.message.Message):
     bearer of this number knew the shared secret of the transaction output,
     thereby providing evidence that they are the sender.
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     HASH_FIELD_NUMBER: builtins.int
-    hash: builtins.bytes = ...
-    def __init__(
-        self,
+    hash: builtins.bytes
+    def __init__(self,
         *,
         hash: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["hash", b"hash"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["hash",b"hash"]) -> None: ...
 global___TxOutConfirmationNumber = TxOutConfirmationNumber
 
-class Amount(google.protobuf.message.Message):
-    """Amount."""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+class MaskedAmount(google.protobuf.message.Message):
+    """MaskedAmount."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     COMMITMENT_FIELD_NUMBER: builtins.int
     MASKED_VALUE_FIELD_NUMBER: builtins.int
+    MASKED_TOKEN_ID_FIELD_NUMBER: builtins.int
     @property
     def commitment(self) -> global___CompressedRistretto:
         """A Pedersen commitment `v*G + s*H`"""
         pass
-    masked_value: builtins.int = ...
+    masked_value: builtins.int
     """`masked_value = value XOR_8 Blake2B("value_mask" || shared_secret)`"""
-    def __init__(
-        self,
+
+    masked_token_id: builtins.bytes
+    """`masked_token_id = token_id XOR_8 Blake2B("token_id_mask" || shared_secret)`"""
+
+    def __init__(self,
         *,
         commitment: typing.Optional[global___CompressedRistretto] = ...,
         masked_value: builtins.int = ...,
-    ) -> None: ...
-    def HasField(
-        self, field_name: typing_extensions.Literal["commitment", b"commitment"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "commitment", b"commitment", "masked_value", b"masked_value"
-        ],
-    ) -> None: ...
-
-global___Amount = Amount
+        masked_token_id: builtins.bytes = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["commitment",b"commitment"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["commitment",b"commitment","masked_token_id",b"masked_token_id","masked_value",b"masked_value"]) -> None: ...
+global___MaskedAmount = MaskedAmount
 
 class EncryptedFogHint(google.protobuf.message.Message):
     """The bytes of encrypted fog hint"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___EncryptedFogHint = EncryptedFogHint
 
 class EncryptedMemo(google.protobuf.message.Message):
     """The bytes of encrypted memo"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     DATA_FIELD_NUMBER: builtins.int
-    data: builtins.bytes = ...
-    def __init__(
-        self,
+    data: builtins.bytes
+    def __init__(self,
         *,
         data: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["data", b"data"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["data",b"data"]) -> None: ...
 global___EncryptedMemo = EncryptedMemo
 
 class TxOut(google.protobuf.message.Message):
     """A Transaction Output."""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
-    AMOUNT_FIELD_NUMBER: builtins.int
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    MASKED_AMOUNT_FIELD_NUMBER: builtins.int
     TARGET_KEY_FIELD_NUMBER: builtins.int
     PUBLIC_KEY_FIELD_NUMBER: builtins.int
     E_FOG_HINT_FIELD_NUMBER: builtins.int
     E_MEMO_FIELD_NUMBER: builtins.int
     @property
-    def amount(self) -> global___Amount:
+    def masked_amount(self) -> global___MaskedAmount:
         """Amount."""
         pass
     @property
@@ -600,214 +452,200 @@ class TxOut(google.protobuf.message.Message):
     def e_memo(self) -> global___EncryptedMemo:
         """Encrypted memo"""
         pass
-    def __init__(
-        self,
+    def __init__(self,
         *,
-        amount: typing.Optional[global___Amount] = ...,
+        masked_amount: typing.Optional[global___MaskedAmount] = ...,
         target_key: typing.Optional[global___CompressedRistretto] = ...,
         public_key: typing.Optional[global___CompressedRistretto] = ...,
         e_fog_hint: typing.Optional[global___EncryptedFogHint] = ...,
         e_memo: typing.Optional[global___EncryptedMemo] = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "amount",
-            b"amount",
-            "e_fog_hint",
-            b"e_fog_hint",
-            "e_memo",
-            b"e_memo",
-            "public_key",
-            b"public_key",
-            "target_key",
-            b"target_key",
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "amount",
-            b"amount",
-            "e_fog_hint",
-            b"e_fog_hint",
-            "e_memo",
-            b"e_memo",
-            "public_key",
-            b"public_key",
-            "target_key",
-            b"target_key",
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["e_fog_hint",b"e_fog_hint","e_memo",b"e_memo","masked_amount",b"masked_amount","public_key",b"public_key","target_key",b"target_key"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["e_fog_hint",b"e_fog_hint","e_memo",b"e_memo","masked_amount",b"masked_amount","public_key",b"public_key","target_key",b"target_key"]) -> None: ...
 global___TxOut = TxOut
 
 class TxIn(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     RING_FIELD_NUMBER: builtins.int
     PROOFS_FIELD_NUMBER: builtins.int
+    INPUT_RULES_FIELD_NUMBER: builtins.int
     @property
-    def ring(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___TxOut
-    ]:
-        """ "Ring" of inputs, one of which is actually being spent."""
+    def ring(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TxOut]:
+        """"Ring" of inputs, one of which is actually being spent."""
         pass
     @property
-    def proofs(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___TxOutMembershipProof
-    ]:
+    def proofs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TxOutMembershipProof]:
         """Proof that each TxOut in `ring` is in the ledger."""
         pass
-    def __init__(
-        self,
+    @property
+    def input_rules(self) -> global___InputRules:
+        """Any rules specified by the signed input"""
+        pass
+    def __init__(self,
         *,
         ring: typing.Optional[typing.Iterable[global___TxOut]] = ...,
         proofs: typing.Optional[typing.Iterable[global___TxOutMembershipProof]] = ...,
-    ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal["proofs", b"proofs", "ring", b"ring"],
-    ) -> None: ...
-
+        input_rules: typing.Optional[global___InputRules] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["input_rules",b"input_rules"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["input_rules",b"input_rules","proofs",b"proofs","ring",b"ring"]) -> None: ...
 global___TxIn = TxIn
+
+class InputRules(google.protobuf.message.Message):
+    """Rules enforced on a transaction by a signed input within it (MCIP #31)"""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    REQUIRED_OUTPUTS_FIELD_NUMBER: builtins.int
+    MAX_TOMBSTONE_BLOCK_FIELD_NUMBER: builtins.int
+    @property
+    def required_outputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TxOut]:
+        """Outputs required to appear in the TxPrefix for the Tx to be valid"""
+        pass
+    max_tombstone_block: builtins.int
+    """A maximum value which the tombstone block for the Tx cannot exceed
+
+    A value of zero here means no limit is enforced
+    """
+
+    def __init__(self,
+        *,
+        required_outputs: typing.Optional[typing.Iterable[global___TxOut]] = ...,
+        max_tombstone_block: builtins.int = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["max_tombstone_block",b"max_tombstone_block","required_outputs",b"required_outputs"]) -> None: ...
+global___InputRules = InputRules
 
 class TxPrefix(google.protobuf.message.Message):
     """A transaction that a client submits to consensus"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     INPUTS_FIELD_NUMBER: builtins.int
     OUTPUTS_FIELD_NUMBER: builtins.int
     FEE_FIELD_NUMBER: builtins.int
     TOMBSTONE_BLOCK_FIELD_NUMBER: builtins.int
+    FEE_TOKEN_ID_FIELD_NUMBER: builtins.int
     @property
-    def inputs(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___TxIn
-    ]:
+    def inputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TxIn]:
         """Transaction inputs."""
         pass
     @property
-    def outputs(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___TxOut
-    ]:
+    def outputs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___TxOut]:
         """Transaction outputs."""
         pass
-    fee: builtins.int = ...
+    fee: builtins.int
     """Fee paid to the foundation for this transaction"""
 
-    tombstone_block: builtins.int = ...
+    tombstone_block: builtins.int
     """The block index at which this transaction is no longer valid."""
-    def __init__(
-        self,
+
+    fee_token_id: builtins.int
+    """Token id for the fee of this transaction"""
+
+    def __init__(self,
         *,
         inputs: typing.Optional[typing.Iterable[global___TxIn]] = ...,
         outputs: typing.Optional[typing.Iterable[global___TxOut]] = ...,
         fee: builtins.int = ...,
         tombstone_block: builtins.int = ...,
-    ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "fee",
-            b"fee",
-            "inputs",
-            b"inputs",
-            "outputs",
-            b"outputs",
-            "tombstone_block",
-            b"tombstone_block",
-        ],
-    ) -> None: ...
-
+        fee_token_id: builtins.int = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["fee",b"fee","fee_token_id",b"fee_token_id","inputs",b"inputs","outputs",b"outputs","tombstone_block",b"tombstone_block"]) -> None: ...
 global___TxPrefix = TxPrefix
 
 class RingMLSAG(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    """A ring mlsag is a group-ring signature conferring spending authority of one TxOut
+    which is part of a TxIn.
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     C_ZERO_FIELD_NUMBER: builtins.int
     RESPONSES_FIELD_NUMBER: builtins.int
     KEY_IMAGE_FIELD_NUMBER: builtins.int
     @property
-    def c_zero(self) -> global___CurveScalar: ...
+    def c_zero(self) -> global___CurveScalar:
+        """The initial challenge value for the ring signature"""
+        pass
     @property
-    def responses(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___CurveScalar
-    ]: ...
+    def responses(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___CurveScalar]:
+        """The "responses", one for each input which is signed"""
+        pass
     @property
-    def key_image(self) -> global___KeyImage: ...
-    def __init__(
-        self,
+    def key_image(self) -> global___KeyImage:
+        """The key image is a hash unique to the "true" spent input. This cannot
+        be linked back to determine the true spent input, but the input cannot be
+        spent again without producing the same key image value, so this is used to
+        prevent double-spends.
+        """
+        pass
+    def __init__(self,
         *,
         c_zero: typing.Optional[global___CurveScalar] = ...,
         responses: typing.Optional[typing.Iterable[global___CurveScalar]] = ...,
         key_image: typing.Optional[global___KeyImage] = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "c_zero", b"c_zero", "key_image", b"key_image"
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "c_zero", b"c_zero", "key_image", b"key_image", "responses", b"responses"
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["c_zero",b"c_zero","key_image",b"key_image"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["c_zero",b"c_zero","key_image",b"key_image","responses",b"responses"]) -> None: ...
 global___RingMLSAG = RingMLSAG
 
 class SignatureRctBulletproofs(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     RING_SIGNATURES_FIELD_NUMBER: builtins.int
     PSEUDO_OUTPUT_COMMITMENTS_FIELD_NUMBER: builtins.int
+    RANGE_PROOF_BYTES_FIELD_NUMBER: builtins.int
     RANGE_PROOFS_FIELD_NUMBER: builtins.int
+    PSEUDO_OUTPUT_TOKEN_IDS_FIELD_NUMBER: builtins.int
+    OUTPUT_TOKEN_IDS_FIELD_NUMBER: builtins.int
     @property
-    def ring_signatures(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___RingMLSAG
-    ]: ...
+    def ring_signatures(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___RingMLSAG]:
+        """A ring-signature, one for each TxIn, producing one pseudo-output and key image."""
+        pass
     @property
-    def pseudo_output_commitments(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___CompressedRistretto
-    ]: ...
-    range_proofs: builtins.bytes = ...
-    def __init__(
-        self,
+    def pseudo_output_commitments(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___CompressedRistretto]:
+        """The amount commitments for each pseudo-output.
+        There must be one of these for each TxIn.
+        """
+        pass
+    range_proof_bytes: builtins.bytes
+    """Before mixed transactions feature, there is one range proof for all pseudo-output
+    and output commitments, whose serialized bytes appear here.
+    After mixed transactions feature, this field is empty.
+    """
+
+    @property
+    def range_proofs(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bytes]:
+        """Before mixed transactions feature, this field is empty.
+        After mixed transactions feature, this field contains one range proof for each
+        token id which appears in the transaction, in sorted order of token ids.
+        It range-proofs the pseudo-outputs and outputs with that token id, in the order
+        that they appear in the transaction.
+        """
+        pass
+    @property
+    def pseudo_output_token_ids(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        """The token ids of each pseudo ouptut. There must be one of these for each TxIn.
+        Before mixed transactions feature, this field is empty, and the token ids of
+        all pseudo-outputs are inferred from the tx.prefix.fee_token_id.
+        """
+        pass
+    @property
+    def output_token_ids(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        """The token ids of each output. There must be one of these for each output of the Tx.
+        (tx.prefix.outputs).
+        Before mixed transactions feature, this field is empty, and the token ids of
+        all outputs are inferred from the tx.prefix.fee_token_id.
+        """
+        pass
+    def __init__(self,
         *,
         ring_signatures: typing.Optional[typing.Iterable[global___RingMLSAG]] = ...,
-        pseudo_output_commitments: typing.Optional[
-            typing.Iterable[global___CompressedRistretto]
-        ] = ...,
-        range_proofs: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "pseudo_output_commitments",
-            b"pseudo_output_commitments",
-            "range_proofs",
-            b"range_proofs",
-            "ring_signatures",
-            b"ring_signatures",
-        ],
-    ) -> None: ...
-
+        pseudo_output_commitments: typing.Optional[typing.Iterable[global___CompressedRistretto]] = ...,
+        range_proof_bytes: builtins.bytes = ...,
+        range_proofs: typing.Optional[typing.Iterable[builtins.bytes]] = ...,
+        pseudo_output_token_ids: typing.Optional[typing.Iterable[builtins.int]] = ...,
+        output_token_ids: typing.Optional[typing.Iterable[builtins.int]] = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["output_token_ids",b"output_token_ids","pseudo_output_commitments",b"pseudo_output_commitments","pseudo_output_token_ids",b"pseudo_output_token_ids","range_proof_bytes",b"range_proof_bytes","range_proofs",b"range_proofs","ring_signatures",b"ring_signatures"]) -> None: ...
 global___SignatureRctBulletproofs = SignatureRctBulletproofs
 
 class Tx(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     PREFIX_FIELD_NUMBER: builtins.int
     SIGNATURE_FIELD_NUMBER: builtins.int
     @property
@@ -818,41 +656,26 @@ class Tx(google.protobuf.message.Message):
     def signature(self) -> global___SignatureRctBulletproofs:
         """The RingCT signature on the prefix."""
         pass
-    def __init__(
-        self,
+    def __init__(self,
         *,
         prefix: typing.Optional[global___TxPrefix] = ...,
         signature: typing.Optional[global___SignatureRctBulletproofs] = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "prefix", b"prefix", "signature", b"signature"
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "prefix", b"prefix", "signature", b"signature"
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["prefix",b"prefix","signature",b"signature"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["prefix",b"prefix","signature",b"signature"]) -> None: ...
 global___Tx = Tx
 
 class TxHash(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     HASH_FIELD_NUMBER: builtins.int
-    hash: builtins.bytes = ...
+    hash: builtins.bytes
     """Hash of a single transaction."""
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
         hash: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["hash", b"hash"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["hash",b"hash"]) -> None: ...
 global___TxHash = TxHash
 
 class Receipt(google.protobuf.message.Message):
@@ -864,12 +687,11 @@ class Receipt(google.protobuf.message.Message):
     as well as know who it's from, when to consider it as having surpassed
     the tombstone block, and the expected amount of the output.
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     PUBLIC_KEY_FIELD_NUMBER: builtins.int
     CONFIRMATION_FIELD_NUMBER: builtins.int
     TOMBSTONE_BLOCK_FIELD_NUMBER: builtins.int
-    AMOUNT_FIELD_NUMBER: builtins.int
+    MASKED_AMOUNT_FIELD_NUMBER: builtins.int
     @property
     def public_key(self) -> global___CompressedRistretto:
         """Public key of the TxOut."""
@@ -878,72 +700,43 @@ class Receipt(google.protobuf.message.Message):
     def confirmation(self) -> global___TxOutConfirmationNumber:
         """Confirmation number of the TxOut."""
         pass
-    tombstone_block: builtins.int = ...
+    tombstone_block: builtins.int
     """Tombstone block of the Tx that produced the TxOut.
     Note: This value is self-reported by the sender and is unverifiable.
     """
+
     @property
-    def amount(self) -> global___Amount:
+    def masked_amount(self) -> global___MaskedAmount:
         """Amount of the TxOut.
         Note: This value is self-reported by the sender and is unverifiable.
         """
         pass
-    def __init__(
-        self,
+    def __init__(self,
         *,
         public_key: typing.Optional[global___CompressedRistretto] = ...,
         confirmation: typing.Optional[global___TxOutConfirmationNumber] = ...,
         tombstone_block: builtins.int = ...,
-        amount: typing.Optional[global___Amount] = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "amount",
-            b"amount",
-            "confirmation",
-            b"confirmation",
-            "public_key",
-            b"public_key",
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "amount",
-            b"amount",
-            "confirmation",
-            b"confirmation",
-            "public_key",
-            b"public_key",
-            "tombstone_block",
-            b"tombstone_block",
-        ],
-    ) -> None: ...
-
+        masked_amount: typing.Optional[global___MaskedAmount] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["confirmation",b"confirmation","masked_amount",b"masked_amount","public_key",b"public_key"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["confirmation",b"confirmation","masked_amount",b"masked_amount","public_key",b"public_key","tombstone_block",b"tombstone_block"]) -> None: ...
 global___Receipt = Receipt
 
 class VerificationSignature(google.protobuf.message.Message):
     """/ The signature over an IAS JSON reponse, created by Intel"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     CONTENTS_FIELD_NUMBER: builtins.int
-    contents: builtins.bytes = ...
-    def __init__(
-        self,
+    contents: builtins.bytes
+    def __init__(self,
         *,
         contents: builtins.bytes = ...,
-    ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["contents", b"contents"]
-    ) -> None: ...
-
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["contents",b"contents"]) -> None: ...
 global___VerificationSignature = VerificationSignature
 
 class VerificationReport(google.protobuf.message.Message):
     """/ The IAS verification report response encoded as a protocol buffer"""
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     SIG_FIELD_NUMBER: builtins.int
     CHAIN_FIELD_NUMBER: builtins.int
     HTTP_BODY_FIELD_NUMBER: builtins.int
@@ -952,32 +745,263 @@ class VerificationReport(google.protobuf.message.Message):
         """/ The IAS-generated signature over the response string"""
         pass
     @property
-    def chain(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
-        builtins.bytes
-    ]:
+    def chain(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bytes]:
         """/ A list of byte strings representing the DER-encoded certificate
         / chain provided by IAS.
         """
         pass
-    http_body: typing.Text = ...
+    http_body: typing.Text
     """/ The raw report body JSON, as a byte sequence"""
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
         sig: typing.Optional[global___VerificationSignature] = ...,
         chain: typing.Optional[typing.Iterable[builtins.bytes]] = ...,
         http_body: typing.Text = ...,
-    ) -> None: ...
-    def HasField(
-        self, field_name: typing_extensions.Literal["sig", b"sig"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "chain", b"chain", "http_body", b"http_body", "sig", b"sig"
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["sig",b"sig"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["chain",b"chain","http_body",b"http_body","sig",b"sig"]) -> None: ...
 global___VerificationReport = VerificationReport
+
+class MintTxPrefix(google.protobuf.message.Message):
+    """/ The contents of a mint-tx, which is a transaction to mint new tokens."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    TOKEN_ID_FIELD_NUMBER: builtins.int
+    AMOUNT_FIELD_NUMBER: builtins.int
+    VIEW_PUBLIC_KEY_FIELD_NUMBER: builtins.int
+    SPEND_PUBLIC_KEY_FIELD_NUMBER: builtins.int
+    NONCE_FIELD_NUMBER: builtins.int
+    TOMBSTONE_BLOCK_FIELD_NUMBER: builtins.int
+    token_id: builtins.int
+    """/ Token ID we are minting."""
+
+    amount: builtins.int
+    """/ Amount we are minting."""
+
+    @property
+    def view_public_key(self) -> global___CompressedRistretto:
+        """/ The destination's public subaddress view key 'C'."""
+        pass
+    @property
+    def spend_public_key(self) -> global___CompressedRistretto:
+        """/ The destination's public subaddress spend key `D`."""
+        pass
+    nonce: builtins.bytes
+    """/ Nonce, to prevent replay attacks.
+    / Must be exactly 64 bytes long (see constant constants::NONCE_LENGTH).
+    """
+
+    tombstone_block: builtins.int
+    """/ The block index at which this transaction is no longer valid."""
+
+    def __init__(self,
+        *,
+        token_id: builtins.int = ...,
+        amount: builtins.int = ...,
+        view_public_key: typing.Optional[global___CompressedRistretto] = ...,
+        spend_public_key: typing.Optional[global___CompressedRistretto] = ...,
+        nonce: builtins.bytes = ...,
+        tombstone_block: builtins.int = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["spend_public_key",b"spend_public_key","view_public_key",b"view_public_key"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["amount",b"amount","nonce",b"nonce","spend_public_key",b"spend_public_key","token_id",b"token_id","tombstone_block",b"tombstone_block","view_public_key",b"view_public_key"]) -> None: ...
+global___MintTxPrefix = MintTxPrefix
+
+class MintTx(google.protobuf.message.Message):
+    """/ A mint transaction coupled with a signature over it."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    PREFIX_FIELD_NUMBER: builtins.int
+    SIGNATURE_FIELD_NUMBER: builtins.int
+    @property
+    def prefix(self) -> global___MintTxPrefix: ...
+    @property
+    def signature(self) -> global___Ed25519MultiSig: ...
+    def __init__(self,
+        *,
+        prefix: typing.Optional[global___MintTxPrefix] = ...,
+        signature: typing.Optional[global___Ed25519MultiSig] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["prefix",b"prefix","signature",b"signature"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["prefix",b"prefix","signature",b"signature"]) -> None: ...
+global___MintTx = MintTx
+
+class MintConfig(google.protobuf.message.Message):
+    """/ A minting configuration for a single token ID.
+    / The minting configuration specifies who is allowed to submit mint
+    / transactions, for which token and at what total limit.
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    TOKEN_ID_FIELD_NUMBER: builtins.int
+    SIGNER_SET_FIELD_NUMBER: builtins.int
+    MINT_LIMIT_FIELD_NUMBER: builtins.int
+    token_id: builtins.int
+    """/ Token ID this configuration applies to."""
+
+    @property
+    def signer_set(self) -> global___Ed25519SignerSet:
+        """/ The set of keys that can sign a minting transaction."""
+        pass
+    mint_limit: builtins.int
+    """/ The maximal amount this configuration can mint from the moment it has
+    / been applied.
+    """
+
+    def __init__(self,
+        *,
+        token_id: builtins.int = ...,
+        signer_set: typing.Optional[global___Ed25519SignerSet] = ...,
+        mint_limit: builtins.int = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["signer_set",b"signer_set"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["mint_limit",b"mint_limit","signer_set",b"signer_set","token_id",b"token_id"]) -> None: ...
+global___MintConfig = MintConfig
+
+class MintConfigTxPrefix(google.protobuf.message.Message):
+    """/ The contents of a mint-config transaction. This transaction alters the
+    / minting configuration for a single token ID.
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    TOKEN_ID_FIELD_NUMBER: builtins.int
+    CONFIGS_FIELD_NUMBER: builtins.int
+    NONCE_FIELD_NUMBER: builtins.int
+    TOMBSTONE_BLOCK_FIELD_NUMBER: builtins.int
+    TOTAL_MINT_LIMIT_FIELD_NUMBER: builtins.int
+    token_id: builtins.int
+    """/ Token ID we are replacing the configuration set for."""
+
+    @property
+    def configs(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___MintConfig]:
+        """/ The new configuration."""
+        pass
+    nonce: builtins.bytes
+    """/ Nonce, to prevent replay attacks.
+    / Must be exactly 64 bytes long (see constant constants::NONCE_LENGTH).
+    """
+
+    tombstone_block: builtins.int
+    """/ The block index at which this transaction is no longer valid."""
+
+    total_mint_limit: builtins.int
+    """/ The maximal amount that can be minted by configurations specified in
+    / this tx. This amount is shared amongst all configs.
+    """
+
+    def __init__(self,
+        *,
+        token_id: builtins.int = ...,
+        configs: typing.Optional[typing.Iterable[global___MintConfig]] = ...,
+        nonce: builtins.bytes = ...,
+        tombstone_block: builtins.int = ...,
+        total_mint_limit: builtins.int = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["configs",b"configs","nonce",b"nonce","token_id",b"token_id","tombstone_block",b"tombstone_block","total_mint_limit",b"total_mint_limit"]) -> None: ...
+global___MintConfigTxPrefix = MintConfigTxPrefix
+
+class MintConfigTx(google.protobuf.message.Message):
+    """/ A mint-config transaction coupled with a signature over it."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    PREFIX_FIELD_NUMBER: builtins.int
+    SIGNATURE_FIELD_NUMBER: builtins.int
+    @property
+    def prefix(self) -> global___MintConfigTxPrefix: ...
+    @property
+    def signature(self) -> global___Ed25519MultiSig: ...
+    def __init__(self,
+        *,
+        prefix: typing.Optional[global___MintConfigTxPrefix] = ...,
+        signature: typing.Optional[global___Ed25519MultiSig] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["prefix",b"prefix","signature",b"signature"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["prefix",b"prefix","signature",b"signature"]) -> None: ...
+global___MintConfigTx = MintConfigTx
+
+class ValidatedMintConfigTx(google.protobuf.message.Message):
+    """/ A mint-config transaction coupled with the data used to validate it."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    MINT_CONFIG_TX_FIELD_NUMBER: builtins.int
+    SIGNER_SET_FIELD_NUMBER: builtins.int
+    @property
+    def mint_config_tx(self) -> global___MintConfigTx: ...
+    @property
+    def signer_set(self) -> global___Ed25519SignerSet: ...
+    def __init__(self,
+        *,
+        mint_config_tx: typing.Optional[global___MintConfigTx] = ...,
+        signer_set: typing.Optional[global___Ed25519SignerSet] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["mint_config_tx",b"mint_config_tx","signer_set",b"signer_set"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["mint_config_tx",b"mint_config_tx","signer_set",b"signer_set"]) -> None: ...
+global___ValidatedMintConfigTx = ValidatedMintConfigTx
+
+class UnmaskedAmount(google.protobuf.message.Message):
+    """The amount and blinding factor of a TxOut"""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    VALUE_FIELD_NUMBER: builtins.int
+    TOKEN_ID_FIELD_NUMBER: builtins.int
+    BLINDING_FIELD_NUMBER: builtins.int
+    value: builtins.int
+    """The value of the amount commitment"""
+
+    token_id: builtins.int
+    """The token_id of the amount commitment"""
+
+    @property
+    def blinding(self) -> global___CurveScalar:
+        """The blinding factor of the amount commitment"""
+        pass
+    def __init__(self,
+        *,
+        value: builtins.int = ...,
+        token_id: builtins.int = ...,
+        blinding: typing.Optional[global___CurveScalar] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["blinding",b"blinding"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["blinding",b"blinding","token_id",b"token_id","value",b"value"]) -> None: ...
+global___UnmaskedAmount = UnmaskedAmount
+
+class SignedContingentInput(google.protobuf.message.Message):
+    """A pre-signed transaction input with associated rules, as described in MCIP #31"""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    BLOCK_VERSION_FIELD_NUMBER: builtins.int
+    TX_IN_FIELD_NUMBER: builtins.int
+    MLSAG_FIELD_NUMBER: builtins.int
+    PSEUDO_OUTPUT_AMOUNT_FIELD_NUMBER: builtins.int
+    REQUIRED_OUTPUT_AMOUNTS_FIELD_NUMBER: builtins.int
+    TX_OUT_GLOBAL_INDICES_FIELD_NUMBER: builtins.int
+    block_version: builtins.int
+    """The block version rules used when making this signature"""
+
+    @property
+    def tx_in(self) -> global___TxIn:
+        """The tx_in which was signed"""
+        pass
+    @property
+    def mlsag(self) -> global___RingMLSAG:
+        """The Ring MLSAG signature, conferring spending authority"""
+        pass
+    @property
+    def pseudo_output_amount(self) -> global___UnmaskedAmount:
+        """The amount and blinding of the pseudo-output of the MLSAG"""
+        pass
+    @property
+    def required_output_amounts(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___UnmaskedAmount]:
+        """/ The amount and blinding of any TxOut required by the input rules"""
+        pass
+    @property
+    def tx_out_global_indices(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        """/ The tx_out global index of each ring member
+        / This helps the recipient of this payload construct proofs of membership for the ring
+        """
+        pass
+    def __init__(self,
+        *,
+        block_version: builtins.int = ...,
+        tx_in: typing.Optional[global___TxIn] = ...,
+        mlsag: typing.Optional[global___RingMLSAG] = ...,
+        pseudo_output_amount: typing.Optional[global___UnmaskedAmount] = ...,
+        required_output_amounts: typing.Optional[typing.Iterable[global___UnmaskedAmount]] = ...,
+        tx_out_global_indices: typing.Optional[typing.Iterable[builtins.int]] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["mlsag",b"mlsag","pseudo_output_amount",b"pseudo_output_amount","tx_in",b"tx_in"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["block_version",b"block_version","mlsag",b"mlsag","pseudo_output_amount",b"pseudo_output_amount","required_output_amounts",b"required_output_amounts","tx_in",b"tx_in","tx_out_global_indices",b"tx_out_global_indices"]) -> None: ...
+global___SignedContingentInput = SignedContingentInput

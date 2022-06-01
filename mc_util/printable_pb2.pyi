@@ -9,43 +9,39 @@ import google.protobuf.message
 import typing
 import typing_extensions
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
+DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
 class PaymentRequest(google.protobuf.message.Message):
     """/ Message for a payment request, which combines a public address
     / with an a requested payment amount and memo field
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     PUBLIC_ADDRESS_FIELD_NUMBER: builtins.int
     VALUE_FIELD_NUMBER: builtins.int
     MEMO_FIELD_NUMBER: builtins.int
+    TOKEN_ID_FIELD_NUMBER: builtins.int
     @property
     def public_address(self) -> external_pb2.PublicAddress:
         """/ The public address of the user requesting a payment"""
         pass
-    value: builtins.int = ...
+    value: builtins.int
     """/ The requested value of the payment"""
 
-    memo: typing.Text = ...
+    memo: typing.Text
     """/ Any additional text explaining the request"""
-    def __init__(
-        self,
+
+    token_id: builtins.int
+    """/ Token id to transact in."""
+
+    def __init__(self,
         *,
         public_address: typing.Optional[external_pb2.PublicAddress] = ...,
         value: builtins.int = ...,
         memo: typing.Text = ...,
-    ) -> None: ...
-    def HasField(
-        self, field_name: typing_extensions.Literal["public_address", b"public_address"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "memo", b"memo", "public_address", b"public_address", "value", b"value"
-        ],
-    ) -> None: ...
-
+        token_id: builtins.int = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["public_address",b"public_address"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["memo",b"memo","public_address",b"public_address","token_id",b"token_id","value",b"value"]) -> None: ...
 global___PaymentRequest = PaymentRequest
 
 class TransferPayload(google.protobuf.message.Message):
@@ -53,114 +49,100 @@ class TransferPayload(google.protobuf.message.Message):
     / giving someone access to an output. This would most likely be
     / used for gift cards.
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     ROOT_ENTROPY_FIELD_NUMBER: builtins.int
     TX_OUT_PUBLIC_KEY_FIELD_NUMBER: builtins.int
     MEMO_FIELD_NUMBER: builtins.int
     BIP39_ENTROPY_FIELD_NUMBER: builtins.int
-    root_entropy: builtins.bytes = ...
+    root_entropy: builtins.bytes
     """/ [Deprecated] The root entropy, allowing the recipient to spend the money.
     / This has been replaced by a BIP39 entropy.
     """
+
     @property
     def tx_out_public_key(self) -> external_pb2.CompressedRistretto:
         """/ The public key of the UTXO to spend. This is an optimization, meaning
         / the recipient does not need to scan the entire ledger.
         """
         pass
-    memo: typing.Text = ...
+    memo: typing.Text
     """/ Any additional text explaining the gift"""
 
-    bip39_entropy: builtins.bytes = ...
+    bip39_entropy: builtins.bytes
     """/ BIP39 entropy, allowing the recipient to spend the money.
     / When deriving an AccountKey from this entropy, account_index is always 0.
     """
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
         root_entropy: builtins.bytes = ...,
         tx_out_public_key: typing.Optional[external_pb2.CompressedRistretto] = ...,
         memo: typing.Text = ...,
         bip39_entropy: builtins.bytes = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "tx_out_public_key", b"tx_out_public_key"
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "bip39_entropy",
-            b"bip39_entropy",
-            "memo",
-            b"memo",
-            "root_entropy",
-            b"root_entropy",
-            "tx_out_public_key",
-            b"tx_out_public_key",
-        ],
-    ) -> None: ...
-
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["tx_out_public_key",b"tx_out_public_key"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["bip39_entropy",b"bip39_entropy","memo",b"memo","root_entropy",b"root_entropy","tx_out_public_key",b"tx_out_public_key"]) -> None: ...
 global___TransferPayload = TransferPayload
+
+class TxOutGiftCode(google.protobuf.message.Message):
+    """/ Message encoding information required to locate a TxOut,
+    / un-blind the amount, and spend the TxOut. This can be used to give
+    / MobileCoin to both FOG & non-FOG users who may not yet have
+    a MobileCoin account enabled
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    GLOBAL_INDEX_FIELD_NUMBER: builtins.int
+    ONETIME_PRIVATE_KEY_FIELD_NUMBER: builtins.int
+    SHARED_SECRET_FIELD_NUMBER: builtins.int
+    global_index: builtins.int
+    """The global index of the TxOut that has been gifted. This allows
+    the receiver to find & uniquely identify the TxOut
+    """
+
+    @property
+    def onetime_private_key(self) -> external_pb2.RistrettoPrivate:
+        """The one-time private key which can be used to spend the TxOut"""
+        pass
+    @property
+    def shared_secret(self) -> external_pb2.CompressedRistretto:
+        """The shared secret used to un-blind the amount of the TxOut"""
+        pass
+    def __init__(self,
+        *,
+        global_index: builtins.int = ...,
+        onetime_private_key: typing.Optional[external_pb2.RistrettoPrivate] = ...,
+        shared_secret: typing.Optional[external_pb2.CompressedRistretto] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["onetime_private_key",b"onetime_private_key","shared_secret",b"shared_secret"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["global_index",b"global_index","onetime_private_key",b"onetime_private_key","shared_secret",b"shared_secret"]) -> None: ...
+global___TxOutGiftCode = TxOutGiftCode
 
 class PrintableWrapper(google.protobuf.message.Message):
     """/ This wraps all of the above messages using "oneof", allowing us to
     / have a single encoding scheme and extend as necessary simply by adding
     / new messages without breaking backwards compatibility
     """
-
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
     PUBLIC_ADDRESS_FIELD_NUMBER: builtins.int
     PAYMENT_REQUEST_FIELD_NUMBER: builtins.int
     TRANSFER_PAYLOAD_FIELD_NUMBER: builtins.int
+    TX_OUT_GIFT_CODE_FIELD_NUMBER: builtins.int
     @property
     def public_address(self) -> external_pb2.PublicAddress: ...
     @property
     def payment_request(self) -> global___PaymentRequest: ...
     @property
     def transfer_payload(self) -> global___TransferPayload: ...
-    def __init__(
-        self,
+    @property
+    def tx_out_gift_code(self) -> global___TxOutGiftCode: ...
+    def __init__(self,
         *,
         public_address: typing.Optional[external_pb2.PublicAddress] = ...,
         payment_request: typing.Optional[global___PaymentRequest] = ...,
         transfer_payload: typing.Optional[global___TransferPayload] = ...,
-    ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing_extensions.Literal[
-            "payment_request",
-            b"payment_request",
-            "public_address",
-            b"public_address",
-            "transfer_payload",
-            b"transfer_payload",
-            "wrapper",
-            b"wrapper",
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "payment_request",
-            b"payment_request",
-            "public_address",
-            b"public_address",
-            "transfer_payload",
-            b"transfer_payload",
-            "wrapper",
-            b"wrapper",
-        ],
-    ) -> None: ...
-    def WhichOneof(
-        self, oneof_group: typing_extensions.Literal["wrapper", b"wrapper"]
-    ) -> typing.Optional[
-        typing_extensions.Literal[
-            "public_address", "payment_request", "transfer_payload"
-        ]
-    ]: ...
-
+        tx_out_gift_code: typing.Optional[global___TxOutGiftCode] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["payment_request",b"payment_request","public_address",b"public_address","transfer_payload",b"transfer_payload","tx_out_gift_code",b"tx_out_gift_code","wrapper",b"wrapper"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["payment_request",b"payment_request","public_address",b"public_address","transfer_payload",b"transfer_payload","tx_out_gift_code",b"tx_out_gift_code","wrapper",b"wrapper"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["wrapper",b"wrapper"]) -> typing.Optional[typing_extensions.Literal["public_address","payment_request","transfer_payload","tx_out_gift_code"]]: ...
 global___PrintableWrapper = PrintableWrapper
