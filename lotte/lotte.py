@@ -49,7 +49,7 @@ class Lotte(PayBot):
         for _, line in self.conversation.items():
             prompt = prompt + "\n" + line
         prompt = prompt + "\n" + f"SOURCE: {msg.full_text} \n{fronter}: "
-        self.conversation[time.time()] = f"SOURCE: {msg.text}"
+        self.conversation[time.time()] = f"SOURCE: {msg.full_text}"
         result = openai.Completion.create(  # type: ignore
             engine="curie",
             prompt=prompt,
