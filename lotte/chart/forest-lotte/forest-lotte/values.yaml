@@ -1,0 +1,66 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets:
+  - name: docker-credentials
+
+replicaCount: 1
+
+image:
+  org: mobilefaeries
+  appRepo: lotte
+  pullPolicy: Always
+  tag: "0.2"
+
+# Add new NON sensitive values to the data field
+lotteConfig:
+  configMap:
+    external: true
+    name: lotte-configmap
+  data:
+    ROOT_DIR: "."
+    SIGNAL: auxin
+    DOWNLOAD: "1"
+    PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
+
+# Add new secret values to the data field. These get mounted as env vars
+lotteSecrets:
+  secret:
+    external: true
+    name: lotte-secrets
+  data:
+    OPENAI_API_KEY: ""
+    DATABASE_URL: ""
+    BOT_NUMBER: ""
+    ADMIN: ""
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+
+
+securityContext: {}
+  # runAsUser: 1000
+  # runAsGroup: 1000
+  # runAsNonRoot: false
+  # capabilities:
+  #   drop:
+  #     - ALL
+  # readOnlyRootFilesystem: false
+
+resources: {}
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+# memory: 128Mi
+
+podAnnotations:
+  fluentbit.io/include: "true" # collect logs with fluentbit
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
