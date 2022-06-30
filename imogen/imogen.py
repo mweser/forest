@@ -365,18 +365,23 @@ class Imogen(GelatoBot):
                 await self.send_message(None, message, group=msg.group, **quote)
             else:
                 await self.send_message(msg.source, message, **quote)
-        # if current_reaction_count in (2, 6):
-        #     await self.admin(f"trying to pay {prompt_author}")
-        #     await self.client_session.post(
-        #         utils.get_secret("PURSE_URL") + "/pay",
-        #         data={
-        #             "destination": prompt_author,
-        #             "amount": 0.01,
-        #             "message": f'sent you a tip for your prompt "{prompt.get("prompt")}" getting {current_reaction_count} reactions',
-        #             "prompt_id": prompt.get("id"),
-        #         },
-        #     )
-        #     return None
+        if current_reaction_count in (2, 6):
+            await self.admin(f"trying to pay {prompt_author}")
+            await self.send_payment(
+                prompt_author, 
+                0.01, 
+                f'sent you a tip for your prompt "{prompt.get("prompt")}" getting {current_reaction_count} reactions', 
+            )
+            # await self.client_session.post(
+            #     utils.get_secret("PURSE_URL") + "/pay",
+            #     data={
+            #         "destination": prompt_author,
+            #         "amount": 0.01,
+            #         "message": f'sent you a tip for your prompt "{prompt.get("prompt")}" getting {current_reaction_count} reactions',
+            #         "prompt_id": prompt.get("id"),
+            #     },
+            # )
+            return None
 
     def match_command(self, msg: Message) -> str:
         if msg.full_text and msg.full_text.lower().startswith("computer"):

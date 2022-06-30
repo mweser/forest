@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/packaging/signal-cli/signal-cli-jre:v0-10-2-5 as signal
+FROM registry.gitlab.com/packaging/signal-cli/signal-cli-jre:v0-10-7-1 as signal
 #FROM registry.gitlab.com/packaging/signal-cli/signal-cli-native:v0-10-5-3 as signal
 RUN signal-cli --version | tee /signal-version
 #RUN mv /usr/bin/signal-cli-native /usr/bin/signal-cli
@@ -44,6 +44,6 @@ COPY --from=libbuilder /app/venv/lib/python3.9/site-packages /app/
 COPY --from=kubectl /opt/bitnami/kubectl/bin/kubectl /usr/local/bin/
 COPY ./mc_util/ /app/mc_util/
 COPY ./forest/ /app/forest/
-COPY ./gelato.py ./imogen.py ./free-imagegen-job.yaml ./paid-imagegen-job.yaml ./a6000.yaml ./esrgan-job.yaml ./diffuse.yaml ./dalle.yaml /app/
+COPY ./gelato.py ./imogen.py ./free-imagegen-job.yaml ./paid-imagegen-job.yaml ./a6000.yaml ./esrgan-job.yaml ./diffuse.yaml /app/
 COPY ./squid.conf ./passwd /etc/squid/
 ENTRYPOINT ["/usr/bin/python3.9", "/app/imogen.py"]
