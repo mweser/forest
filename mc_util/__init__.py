@@ -106,8 +106,6 @@ def add_checksum_and_b58(wrapper_bytes: bytes) -> str:
 #     except Exception:
 #         return False
 
-def run_me():
-    print(b64_receipt_to_full_service_receipt('CiIKIBRB19Uul7i2HivDzB8fMCOLbgAlnTq+cRbJF2KUSEI0EiIKIDhFYUymnMjt47yuEDj8x5zjsk402vyUMIgHPObC4gORGI/BNyI3CiIKICag6rwwgjGQ6Nm9zMol/2WEzaaLW5l3l6MX7pm4VK5LEcW6zicsFO8jGgiZG6Ak6hTstg=='))
 
 def b64_receipt_to_full_service_receipt(b64_string: str) -> dict:
     """Convert a b64-encoded protobuf Receipt into a full-service receipt object"""
@@ -123,6 +121,7 @@ def b64_receipt_to_full_service_receipt(b64_string: str) -> dict:
             "object": "amount",
             "commitment": receipt.amount.commitment.data.hex(),
             "masked_value": str(int(receipt.amount.masked_value)),
+            "masked_token_id": ""
         },
     }
 
