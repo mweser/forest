@@ -994,7 +994,7 @@ _AMOUNT = _descriptor.Descriptor(
     fields=[
         _descriptor.FieldDescriptor(
             name="commitment",
-            full_name="external.Amount.commitment",
+            full_name="external.Amount.",
             index=0,
             number=1,
             type=11,
